@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCSR Ranked Overlay</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+  html { font-size: calc(16px * var(--scale, 1)); }
+  html, body { margin: 0; padding: 0; background: transparent; }
+  * { box-sizing: border-box; }
+  body {
+    min-height: 100vh; padding: 10px; overflow: hidden;
+    display: flex; flex-direction: column; align-items: flex-start;
+    font: 500 .8125rem/1.3 var(--font, 'Segoe UI'), system-ui, sans-serif;
+    font-variant-numeric: tabular-nums; letter-spacing: -.005em;
+    color: var(--text); -webkit-font-smoothing: antialiased;
+  }
+  body.a-center { align-items: center; }
+  body.a-right { align-items: flex-end; }
+  body.v-bottom { justify-content: flex-end; }
+  body.tshadow .ov { text-shadow: 0 1px 2px rgba(0,0,0,.75); }
+
+  .ov { position: relative; flex: none; overflow: hidden; background: var(--bg); border-radius: var(--radius); }
+  .ov.bordered { box-shadow: inset 0 0 0 1px var(--line); }
+  .ov.shadowed { box-shadow: 0 8px 24px rgba(0,0,0,.28); }
+  .ov.bordered.shadowed { box-shadow: inset 0 0 0 1px var(--line), 0 8px 24px rgba(0,0,0,.28); }
+
+  .pos { color: var(--win); } .neg { color: var(--loss); } .zero { color: var(--muted); }
+  .muted { color: var(--muted); }
+  .trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* card */
+  .card { width: calc(var(--w) * 1rem / 16); padding: 1rem; }
+  .sec { margin-top: .875rem; padding-top: .875rem; border-top: 1px solid var(--line); }
+
+  .hd { display: flex; align-items: center; gap: .75rem; }
+  .av { width: 2.5rem; height: 2.5rem; flex: none; border-radius: calc(var(--radius) * .5); image-rendering: pixelated; }
+  .who { flex: 1; min-width: 0; }
+  .nm { display: flex; align-items: center; gap: .375rem; font-size: .9375rem; font-weight: 600; }
+  .flag { height: .625rem; width: auto; flex: none; border-radius: 1px; }
+  .sub { margin-top: .125rem; font-size: .75rem; color: var(--muted); white-space: nowrap; }
+  .tier { color: var(--tier); font-weight: 600; }
+  .elo { flex: none; text-align: right; }
+  .ev { font-size: 1.75rem; font-weight: 600; line-height: 1; letter-spacing: -.03em; }
+  .ev.up { animation: up 2.2s ease; } .ev.down { animation: down 2.2s ease; }
+  .el { margin-top: .25rem; font-size: .6875rem; color: var(--muted); }
+
+  .prog { margin-top: .875rem; }
+  .track { height: 2px; border-radius: 1px; background: var(--track); overflow: hidden; }
+  .track i { display: block; height: 100%; background: var(--tier); transition: width .8s ease; }
+  .pm { display: flex; justify-content: space-between; margin-top: .4375rem; font-size: .6875rem; color: var(--muted); }
+  .pm b { color: var(--text); font-weight: 500; }
+
+  .stats { display: grid; gap: .75rem .5rem; }
+  .stat b { display: block; font-size: .9375rem; font-weight: 600; line-height: 1.2; white-space: nowrap; }
+  .stat b small { font-size: .75em; font-weight: 500; color: var(--muted); }
+  .stat span { display: block; margin-top: .125rem; font-size: .6875rem; color: var(--muted); white-space: nowrap; }
+
+  .sess { display: flex; align-items: baseline; gap: .5rem; font-size: .75rem; color: var(--muted); user-select: none; }
+  .sess .rec { margin-left: auto; }
+  .sess .d { min-width: 2.25rem; text-align: right; font-size: .875rem; font-weight: 600; }
+
+  .mh { display: flex; justify-content: space-between; margin-bottom: .375rem; font-size: .6875rem; color: var(--muted); }
+  .ml { list-style: none; margin: 0; padding: 0; }
+  .m { display: flex; align-items: center; gap: .625rem; min-height: 1.75rem; padding: .1875rem 0; }
+  .r { width: .75rem; flex: none; font-size: .75rem; font-weight: 700; }
+  .win .r { color: var(--win); } .loss .r { color: var(--loss); } .draw .r { color: var(--muted); }
+  .op { flex: 1; min-width: 0; }
+  .op em { margin-left: .375rem; font-size: .75rem; font-style: normal; color: var(--faint); }
+  .op small { display: block; font-size: .6875rem; color: var(--muted); }
+  .t { flex: none; font-size: .75rem; color: var(--muted); white-space: nowrap; }
+  .ff { margin-left: .25rem; font-size: .625rem; font-weight: 600; color: var(--faint); }
+  .ago { flex: none; width: 1.75rem; text-align: right; font-size: .6875rem; color: var(--faint); }
+  .c { flex: none; width: 2.25rem; text-align: right; font-weight: 600; }
+  .empty { padding: .25rem 0; font-size: .75rem; color: var(--muted); }
+
+  /* bar */
+  .bar { display: flex; align-items: flex-end; gap: 1.25rem; padding: .5rem 1.125rem .5rem .5rem; white-space: nowrap; }
+  .bar .av { width: 2.25rem; height: 2.25rem; align-self: center; }
+  .bar .who { flex: none; align-self: center; margin-left: -.5rem; }
+  .bar .nm { font-size: .875rem; }
+  .bar .sub { font-size: .6875rem; }
+  .vr { width: 1px; height: 1.75rem; align-self: center; background: var(--line); }
+  .kv b { display: block; font-size: .9375rem; font-weight: 600; line-height: 1.2; }
+  .kv b.big { font-size: 1.25rem; letter-spacing: -.02em; line-height: 1.05; }
+  .kv b small { font-size: .75em; font-weight: 500; color: var(--muted); }
+  .kv span { display: block; margin-top: .125rem; font-size: .6875rem; color: var(--muted); }
+  .kv b.form { display: flex; gap: .5rem; }
+  .btrack { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--track); }
+  .btrack i { display: block; height: 100%; background: var(--tier); transition: width .8s ease; }
+
+  /* messages */
+  .msg .mt { font-size: .875rem; font-weight: 600; }
+  .msg .mb { margin-top: .25rem; font-size: .75rem; line-height: 1.45; color: var(--muted); white-space: normal; }
+  .bar.msg { display: block; padding: .75rem 1rem; }
+  .msg code { font-family: Consolas, ui-monospace, monospace; color: var(--text); }
+  .stale { position: absolute; top: .5rem; right: .5rem; width: 5px; height: 5px; border-radius: 50%; background: var(--loss); opacity: .7; }
+
+  /* new-match popup */
+  .toast { position: absolute; left: 0; right: 0; top: 0; z-index: 2; display: flex; align-items: center; gap: .75rem; padding: 0 1rem; box-shadow: inset 3px 0 0 var(--tc); }
+  .bar .toast { bottom: 0; }
+  .hd, .bar > * { transition: opacity .2s ease; }
+  .card.toasting .hd, .bar.toasting > :not(.toast) { opacity: 0; }
+  .toast.win { --tc: var(--win); } .toast.loss { --tc: var(--loss); } .toast.draw { --tc: var(--muted); }
+  .toast.enter { animation: tin .3s cubic-bezier(.2,.7,.2,1) both; }
+  .toast.leave { animation: tout .3s ease-in both; }
+  .tk { font-size: .9375rem; font-weight: 700; color: var(--tc); }
+  .tv { flex: 1; min-width: 0; font-size: .8125rem; color: var(--muted); }
+  .tv b { font-weight: 500; color: var(--text); }
+  .tc { font-size: 1.25rem; font-weight: 700; color: var(--tc); }
+
+  @keyframes tin { from { transform: translateY(-100%); } }
+  @keyframes tout { to { transform: translateY(-100%); } }
+  @keyframes up { 0%, 45% { color: var(--win); } }
+  @keyframes down { 0%, 45% { color: var(--loss); } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(() => {
+  'use strict';
+
+  const API = 'https://api.mcsrranked.com';
+  const MATCH_FETCH = 50; // enough history to compute the session
+
+  // Every option is a URL param: overlay.html?u=orq2&layout=bar&matches=8 (also read after a #)
+  const DEFAULTS = {
+    u: '',
+    layout: 'card', stats: 'season', align: 'left', valign: 'top',
+    avatar: true, flag: true, tier: true, rank: true, progress: true, peak: true,
+    pb: true, avg: false, wl: true, wr: true, streak: false, ff: false, played: false,
+    session: true, reset: 4,
+    matches: 5, oppelo: true, seed: false, ago: false, popup: true,
+    font: 'geist', bg: '0f1115', bga: 92, text: 'eceef2', win: '4ade80', loss: 'f87171',
+    scale: 100, width: 320, radius: 8, border: true, shadow: false, tshadow: false,
+    refresh: 30,
+  };
+
+  const FONTS = {
+    geist: ['Geist', 'Geist:wght@400;500;600;700'],
+    inter: ['Inter', 'Inter:wght@400;500;600;700'],
+    mono: ['Geist Mono', 'Geist+Mono:wght@400;500;600;700'],
+    pixel: ['Pixelify Sans', 'Pixelify+Sans:wght@400;500;600;700'],
+    system: ['Segoe UI', null],
+  };
+
+  // MCSR Ranked divisions: [elo floor, name]
+  const DIVS = [
+    [0, 'Coal I'], [200, 'Coal II'], [400, 'Coal III'],
+    [600, 'Iron I'], [700, 'Iron II'], [800, 'Iron III'],
+    [900, 'Gold I'], [1000, 'Gold II'], [1100, 'Gold III'],
+    [1200, 'Emerald I'], [1300, 'Emerald II'], [1400, 'Emerald III'],
+    [1500, 'Diamond I'], [1650, 'Diamond II'], [1800, 'Diamond III'],
+    [2000, 'Netherite'],
+  ];
+  const TIER_COLORS = {
+    Coal: '#9ca3af', Iron: '#d4d8de', Gold: '#facc15', Emerald: '#34d399',
+    Diamond: '#67e8f9', Netherite: '#c4a49b', Unrated: '#9ca3af',
+  };
+
+  // ---------- helpers ----------
+  const $ = (s, el = document) => el.querySelector(s);
+  const pad = n => String(n).padStart(2, '0');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  const num = n => n == null ? '—' : Number(n).toLocaleString('en-US');
+  const pct = n => n == null ? '—' : Math.round(n * 100) + '%';
+  const signed = n => n == null ? '—' : n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0';
+  const signCls = n => !n ? 'zero' : n > 0 ? 'pos' : 'neg';
+  const titleCase = s => s ? String(s).toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase()) : '';
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  };
+
+  function fmtTime(ms, withMs) {
+    if (ms == null) return '—';
+    const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+    const base = h ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
+    return withMs ? `${base}<small>.${String(ms % 1000).padStart(3, '0')}</small>` : base;
+  }
+  function ago(sec) {
+    const d = Date.now() / 1000 - sec;
+    if (d < 3600) return Math.max(1, Math.floor(d / 60)) + 'm';
+    if (d < 86400) return Math.floor(d / 3600) + 'h';
+    return Math.floor(d / 86400) + 'd';
+  }
+  function rgb(hex, fallback) {
+    let h = String(hex || '').replace('#', '').trim();
+    if (/^[0-9a-f]{3}$/i.test(h)) h = h.split('').map(c => c + c).join('');
+    if (!/^[0-9a-f]{6}$/i.test(h)) return fallback ? rgb(fallback) : [255, 255, 255];
+    return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
+  }
+  const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+
+  // ---------- config ----------
+  function readParams() {
+    const out = {};
+    const add = s => new URLSearchParams(s).forEach((v, k) => { out[k] = v; });
+    add(location.search);
+    add(location.hash.replace(/^#/, ''));
+    return out;
+  }
+  function normalize(raw) {
+    const c = {};
+    for (const k in DEFAULTS) {
+      const d = DEFAULTS[k], v = raw[k];
+      if (v === undefined || v === null || v === '') c[k] = d;
+      else if (typeof d === 'number') { const n = parseFloat(v); c[k] = isFinite(n) ? n : d; }
+      else if (typeof d === 'boolean') c[k] = v === true || v === 1 || /^(1|true|on|yes)$/i.test(String(v));
+      else c[k] = String(v);
+    }
+    if (!c.u && (raw.user || raw.username)) c.u = String(raw.user || raw.username);
+    c.u = c.u.trim();
+    if (/^[0-9a-f-]{36}$/i.test(c.u)) c.u = c.u.replace(/-/g, '');
+    c.refresh = Math.max(15, c.refresh);
+    c.matches = Math.max(0, Math.min(15, Math.round(c.matches)));
+    c.scale = Math.max(30, Math.min(400, c.scale));
+    return c;
+  }
+
+  let cfg = normalize(readParams());
+  let fontKey = null;
+
+  function applyTheme() {
+    const S = document.documentElement.style;
+    const t = rgb(cfg.text, DEFAULTS.text), bg = rgb(cfg.bg, DEFAULTS.bg);
+    const a = Math.max(0, Math.min(100, cfg.bga)) / 100;
+    const vars = {
+      '--text': rgba(t, 1), '--muted': rgba(t, .56), '--faint': rgba(t, .36),
+      '--line': rgba(t, .09), '--track': rgba(t, .12),
+      '--bg': rgba(bg, a),
+      '--win': rgba(rgb(cfg.win, DEFAULTS.win), 1), '--loss': rgba(rgb(cfg.loss, DEFAULTS.loss), 1),
+      '--scale': cfg.scale / 100, '--w': cfg.width, '--radius': (cfg.radius / 16) + 'rem',
+    };
+    for (const k in vars) S.setProperty(k, vars[k]);
+
+    const f = FONTS[cfg.font] || FONTS.geist;
+    S.setProperty('--font', `'${f[0]}'`);
+    if (f[1] && fontKey !== cfg.font) {
+      fontKey = cfg.font;
+      let link = $('#font-css');
+      if (!link) {
+        link = document.createElement('link');
+        link.id = 'font-css';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+      }
+      link.href = `https://fonts.googleapis.com/css2?family=${f[1]}&display=swap`;
+    }
+    document.body.className = [`a-${cfg.align}`, `v-${cfg.valign}`, cfg.tshadow ? 'tshadow' : ''].join(' ');
+  }
+
+  // ---------- data ----------
+  async function api(path) {
+    const sep = path.includes('?') ? '&' : '?';
+    // the API sends max-age=14400, so bypass every cache layer
+    const res = await fetch(`${API}${path}${sep}_=${Date.now()}`, { cache: 'no-store' });
+    let body = null;
+    try { body = await res.json(); } catch (e) {}
+    if (!res.ok || !body || body.status !== 'success') {
+      const err = new Error((body && body.data && body.data.error) || `HTTP ${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
+    return body.data;
+  }
+
+  function tierOf(elo) {
+    if (elo == null) return { name: 'Unrated', color: TIER_COLORS.Unrated, pct: 0, next: null };
+    let i = 0;
+    while (i + 1 < DIVS.length && elo >= DIVS[i + 1][0]) i++;
+    const [lo, name] = DIVS[i], nx = DIVS[i + 1];
+    return {
+      name, color: TIER_COLORS[name.split(' ')[0]],
+      pct: nx ? (elo - lo) / (nx[0] - lo) : 1,
+      next: nx ? nx[1] : null, toNext: nx ? nx[0] - elo : 0,
+    };
+  }
+
+  function parseMatch(m, uuid) {
+    const opp = (m.players || []).find(p => p.uuid !== uuid) || {};
+    const ch = (m.changes || []).find(x => x.uuid === uuid);
+    const winner = m.result && m.result.uuid;
+    const seed = m.seed || {};
+    return {
+      id: m.id, date: m.date,
+      res: !winner ? 'draw' : winner === uuid ? 'win' : 'loss',
+      opp: opp.nickname || 'Unknown', oppElo: opp.eloRate,
+      time: m.result ? m.result.time : null, ff: !!m.forfeited,
+      change: ch ? ch.change : null,
+      seed: [titleCase(m.seedType || seed.overworld), titleCase(m.bastionType || seed.nether)].filter(Boolean).join(' · '),
+    };
+  }
+
+  function statsOf(user) {
+    const st = user.statistics || {};
+    const s = st[cfg.stats] || st.season || {};
+    const g = k => (s[k] ? s[k].ranked : null);
+    const wins = g('wins') || 0, loses = g('loses') || 0, played = g('playedMatches') || 0, comps = g('completions') || 0;
+    return {
+      pb: g('bestTime'), wins, loses, played,
+      wr: wins + loses ? wins / (wins + loses) : null,
+      avg: comps ? g('completionTime') / comps : null,
+      streak: g('currentWinStreak') || 0, best: g('highestWinStreak') || 0,
+      ffr: played ? (g('forfeits') || 0) / played : null,
+    };
+  }
+
+  // A session starts when the overlay opens and ends after `reset` hours with no ranked match.
+  const sessionKey = () => 'mcsr-overlay:session:' + state.user.uuid;
+  function sessionOf() {
+    const now = Date.now() / 1000;
+    const matches = state.matches || [];
+    const last = matches[0] ? matches[0].date : 0;
+    let s = store.get(sessionKey());
+    if (!s || !s.start || now - Math.max(s.start, last) > cfg.reset * 3600) {
+      s = { start: now };
+      store.set(sessionKey(), s);
+    }
+    const list = matches.filter(m => m.date >= s.start);
+    const count = r => list.filter(m => m.res === r).length;
+    return { elo: list.reduce((a, m) => a + (m.change || 0), 0), w: count('win'), l: count('loss'), d: count('draw') };
+  }
+
+  // ---------- polling ----------
+  const state = { user: null, matches: null, key: null, primed: false, error: null, timer: null, gen: 0, shownElo: null, toast: null, toastTimer: null };
+
+  function restart() {
+    clearTimeout(state.timer);
+    clearTimeout(state.toastTimer);
+    Object.assign(state, { user: null, matches: null, key: null, primed: false, error: null, gen: state.gen + 1, shownElo: null, toast: null });
+    render();
+    poll();
+  }
+
+  async function poll() {
+    clearTimeout(state.timer);
+    if (!cfg.u) return render();
+    const gen = state.gen;
+    let delay = cfg.refresh * 1000;
+    try {
+      const user = await api('/users/' + encodeURIComponent(cfg.u));
+      if (gen !== state.gen) return;
+      // only refetch matches when the profile says something changed
+      const played = (((user.statistics || {}).total || {}).playedMatches || {}).ranked;
+      const key = [user.uuid, (user.timestamp || {}).lastRanked, played].join(':');
+      if (key !== state.key) {
+        const list = await api(`/users/${user.uuid}/matches?type=2&count=${MATCH_FETCH}`);
+        if (gen !== state.gen) return;
+        const parsed = list.filter(m => !m.decayed).map(m => parseMatch(m, user.uuid));
+        const prevTop = state.matches && state.matches[0] ? state.matches[0].id : null;
+        if (state.primed && cfg.popup && parsed[0] && parsed[0].id !== prevTop) showToast(parsed[0]);
+        state.matches = parsed;
+        state.key = key;
+        state.primed = true;
+      }
+      state.user = user;
+      state.error = null;
+      notify({ type: 'mcsr:status', ok: true, nickname: user.nickname, elo: user.eloRate });
+    } catch (e) {
+      if (gen !== state.gen) return;
+      state.error = e;
+      if (e.status === 400) { state.user = null; state.matches = null; }
+      if (e.status === 429) delay = Math.max(delay, 120000);
+      else if (!state.user) delay = Math.min(delay, 15000);
+      notify({ type: 'mcsr:status', ok: false, notFound: e.status === 400, error: e.message });
+    }
+    render();
+    state.timer = setTimeout(poll, delay);
+  }
+
+  // ---------- markup ----------
+  function shell(cls, inner, style = '') {
+    const c = ['ov', cls, cfg.border && 'bordered', cfg.shadow && 'shadowed'].filter(Boolean).join(' ');
+    return `<div class="${c}" style="${style}">${inner}</div>`;
+  }
+  function msgCard(title, body) {
+    return shell(`${cfg.layout === 'bar' ? 'bar' : 'card'} msg`, `<div class="mt">${title}</div><div class="mb">${body}</div>`);
+  }
+
+  function statList(s) {
+    const out = [];
+    if (cfg.pb) out.push(['Best time', fmtTime(s.pb, true)]);
+    if (cfg.avg) out.push(['Avg time', fmtTime(s.avg)]);
+    if (cfg.wl) out.push(['W–L', `${s.wins}<small>–</small>${s.loses}`]);
+    if (cfg.wr) out.push(['Winrate', pct(s.wr)]);
+    if (cfg.streak) out.push(['Streak', `${s.streak}<small> / ${s.best} best</small>`]);
+    if (cfg.ff) out.push(['Forfeit rate', pct(s.ffr)]);
+    if (cfg.played) out.push(['Played', num(s.played)]);
+    return out;
+  }
+
+  function avatarHtml(u) {
+    return cfg.avatar ? `<img class="av" src="https://mc-heads.net/avatar/${u.uuid}/64" alt="" onerror="this.style.visibility='hidden'">` : '';
+  }
+  function nameHtml(u) {
+    const flag = cfg.flag && u.country
+      ? `<img class="flag" src="https://flagcdn.com/w40/${esc(u.country.toLowerCase())}.png" alt="" onerror="this.remove()">` : '';
+    return `<div class="nm"><span class="trunc">${esc(u.nickname)}</span>${flag}</div>`;
+  }
+
+  function cardHtml(u, tier, s) {
+    const unrated = u.eloRate == null;
+    const peak = (u.seasonResult || {}).highest;
+    const showProg = cfg.progress && !unrated;
+    const under = [];
+    if (cfg.rank && u.eloRank) under.push('#' + num(u.eloRank));
+    if (cfg.peak && !showProg && peak) under.push('peak ' + num(peak));
+
+    let h = `<div class="hd">${avatarHtml(u)}
+      <div class="who">${nameHtml(u)}${cfg.tier ? `<div class="sub"><span class="tier">${tier.name}</span></div>` : ''}</div>
+      <div class="elo"><div class="ev">${unrated ? '—' : num(u.eloRate)}</div><div class="el">${under.length ? under.join(' · ') : unrated ? 'placements' : 'elo'}</div></div>
+    </div>`;
+
+    if (showProg) {
+      const left = cfg.peak && peak ? `Peak <b>${num(peak)}</b>` : `${tier.name}`;
+      const right = tier.next ? `<b>${tier.toNext}</b> to ${tier.next}` : 'Top tier';
+      h += `<div class="prog"><div class="track"><i style="width:${(tier.pct * 100).toFixed(1)}%"></i></div>
+        <div class="pm"><span>${left}</span><span>${right}</span></div></div>`;
+    }
+
+    const stats = statList(s);
+    if (stats.length) {
+      const cols = stats.length === 4 ? 2 : Math.min(3, stats.length);
+      h += `<div class="sec stats" style="grid-template-columns:repeat(${cols},1fr)">` +
+        stats.map(([k, v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join('') + '</div>';
+    }
+
+    if (cfg.session) {
+      const ss = sessionOf();
+      const rec = `${ss.w}W ${ss.l}L` + (ss.d ? ` ${ss.d}D` : '');
+      h += `<div class="sec sess sess-hit" title="Double-click to start a new session">
+        <span>Session</span><span class="rec">${rec}</span><span class="d ${signCls(ss.elo)}">${signed(ss.elo)}</span></div>`;
+    }
+
+    if (cfg.matches > 0) {
+      const list = (state.matches || []).slice(0, cfg.matches);
+      h += '<div class="sec"><div class="mh"><span>Recent matches</span><span>Elo</span></div>';
+      h += list.length ? `<ul class="ml">${list.map(matchRow).join('')}</ul>` : '<div class="empty">No ranked matches yet</div>';
+      h += '</div>';
+    }
+    return shell('card', h, `--tier:${tier.color}`);
+  }
+
+  function matchRow(m) {
+    const letter = m.res === 'win' ? 'W' : m.res === 'loss' ? 'L' : 'D';
+    const oppElo = cfg.oppelo && m.oppElo != null ? `<em>${m.oppElo}</em>` : '';
+    const seed = cfg.seed && m.seed ? `<small class="trunc">${esc(m.seed)}</small>` : '';
+    return `<li class="m ${m.res}">
+      <span class="r">${letter}</span>
+      <span class="op"><div class="trunc">${esc(m.opp)}${oppElo}</div>${seed}</span>
+      <span class="t">${m.time != null ? fmtTime(m.time) : '—'}${m.ff ? '<span class="ff">FF</span>' : ''}</span>
+      ${cfg.ago ? `<span class="ago">${ago(m.date)}</span>` : ''}
+      <span class="c ${signCls(m.change)}">${signed(m.change)}</span>
+    </li>`;
+  }
+
+  function barHtml(u, tier, s) {
+    const unrated = u.eloRate == null;
+    const peak = (u.seasonResult || {}).highest;
+    const kv = (v, k, cls = '') => `<div class="kv"><b class="${cls}">${v}</b><span>${k}</span></div>`;
+    const sub = [cfg.tier ? `<span class="tier">${tier.name}</span>` : '', cfg.rank && u.eloRank ? '#' + num(u.eloRank) : ''].filter(Boolean).join(' · ');
+
+    let h = avatarHtml(u) + `<div class="who">${nameHtml(u)}${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
+    h += '<div class="vr"></div>' + kv(unrated ? '—' : num(u.eloRate), unrated ? 'Placements' : 'Elo', 'big ev');
+    if (cfg.peak && peak) h += kv(num(peak), 'Peak');
+    h += statList(s).map(([k, v]) => kv(v, k)).join('');
+    if (cfg.session) {
+      const ss = sessionOf();
+      h += '<div class="vr"></div>' + `<div class="kv sess-hit" title="Double-click to start a new session"><b class="${signCls(ss.elo)}">${signed(ss.elo)}</b><span>Session ${ss.w}W ${ss.l}L</span></div>`;
+    }
+    const list = (state.matches || []).slice(0, cfg.matches);
+    if (list.length) {
+      h += '<div class="vr"></div>' + `<div class="kv"><b class="form">${list.map(m =>
+        `<span class="${m.change == null ? (m.res === 'win' ? 'pos' : m.res === 'loss' ? 'neg' : 'zero') : signCls(m.change)}">${m.change == null ? m.res[0].toUpperCase() : signed(m.change)}</span>`).join('')}</b><span>Last ${list.length}</span></div>`;
+    }
+    if (cfg.progress && !unrated) h += `<div class="btrack"><i style="width:${(tier.pct * 100).toFixed(1)}%"></i></div>`;
+    return shell('bar', h, `--tier:${tier.color}`);
+  }
+
+  // ---------- render ----------
+  let lastHtml = '';
+  function render() {
+    const root = $('#root');
+    let html;
+    if (!cfg.u) {
+      html = msgCard('MCSR Ranked overlay', 'Add <code>?u=YourName</code> to the URL, or open index.html to customize.');
+    } else if (!state.user) {
+      const nf = state.error && state.error.status === 400;
+      html = !state.error ? msgCard('Loading', `Fetching ${esc(cfg.u)}…`)
+        : nf ? msgCard('Player not found', `No ranked profile for “${esc(cfg.u)}”.`)
+        : msgCard('Can’t reach MCSR Ranked', 'Retrying shortly.');
+    } else {
+      const u = state.user, tier = tierOf(u.eloRate), s = statsOf(u);
+      html = cfg.layout === 'bar' ? barHtml(u, tier, s) : cardHtml(u, tier, s);
+      if (state.error) html = html.replace(/<\/div>$/, `<div class="stale" title="${esc(state.error.message)}"></div></div>`);
+    }
+
+    if (html !== lastHtml) {
+      lastHtml = html;
+      root.innerHTML = html;
+      const u = state.user, ev = $('.ev', root);
+      if (u && ev && u.eloRate != null && state.shownElo != null && state.shownElo !== u.eloRate) {
+        ev.classList.add(u.eloRate > state.shownElo ? 'up' : 'down');
+        countUp(ev, state.shownElo, u.eloRate);
+      }
+      if (u && u.eloRate != null) state.shownElo = u.eloRate;
+    }
+    const ov = $('.ov', root);
+    if (state.toast && state.user && ov && !$('.toast', ov)) mountToast(ov);
+    reportSize();
+  }
+
+  function countUp(el, from, to) {
+    const t0 = performance.now(), dur = 1200;
+    const step = t => {
+      const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = num(Math.round(from + (to - from) * e));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  // ---------- popup ----------
+  function showToast(m) {
+    clearTimeout(state.toastTimer);
+    const old = $('.toast');
+    if (old) old.remove();
+    state.toast = { m, entered: false };
+    const ov = $('.ov');
+    if (ov && state.user) mountToast(ov);
+    state.toastTimer = setTimeout(() => {
+      const el = $('.toast');
+      if (el) { el.classList.remove('enter'); el.classList.add('leave'); el.parentNode.classList.remove('toasting'); }
+      state.toastTimer = setTimeout(() => { state.toast = null; const t = $('.toast'); if (t) t.remove(); }, 320);
+    }, 7000);
+  }
+  function mountToast(ov) {
+    const m = state.toast.m;
+    const word = m.res === 'win' ? 'Win' : m.res === 'loss' ? 'Loss' : 'Draw';
+    const detail = [`vs <b>${esc(m.opp)}</b>`];
+    if (m.time != null) detail.push(fmtTime(m.time) + (m.ff ? ' FF' : ''));
+    ov.insertAdjacentHTML('beforeend', `<div class="toast ${m.res}${state.toast.entered ? '' : ' enter'}">
+      <span class="tk">${word}</span><span class="tv trunc">${detail.join(' · ')}</span>
+      <span class="tc">${m.change == null ? '' : signed(m.change)}</span></div>`);
+    state.toast.entered = true;
+    ov.classList.add('toasting');
+    const hd = $('.hd', ov);
+    if (hd) $('.toast', ov).style.height = (hd.offsetTop * 2 + hd.offsetHeight) + 'px';
+  }
+
+  // ---------- customizer preview bridge ----------
+  const embedded = window.parent !== window;
+  function notify(msg) { if (embedded) { try { parent.postMessage(msg, '*'); } catch (e) {} } }
+  let lastSize = '';
+  function reportSize() {
+    const ov = embedded && $('.ov');
+    if (!ov) return;
+    const r = ov.getBoundingClientRect();
+    const key = Math.ceil(r.width) + 'x' + Math.ceil(r.height);
+    if (key === lastSize) return;
+    lastSize = key;
+    notify({ type: 'mcsr:size', w: Math.ceil(r.width) + 20, h: Math.ceil(r.height) + 20 });
+  }
+  if (embedded && window.ResizeObserver) new ResizeObserver(reportSize).observe($('#root'));
+
+  window.addEventListener('message', e => {
+    const d = e.data;
+    if (!d || typeof d !== 'object') return;
+    if (d.type === 'mcsr:config') {
+      const prevUser = cfg.u.toLowerCase();
+      cfg = normalize(d.cfg || {});
+      applyTheme();
+      if (cfg.u.toLowerCase() !== prevUser) restart();
+      else render();
+    } else if (d.type === 'mcsr:test-popup' && state.matches && state.matches[0]) {
+      showToast(state.matches[0]);
+    }
+  });
+
+  // Double-click the session row (in OBS: right-click the source → Interact) to start a new session.
+  document.addEventListener('dblclick', e => {
+    if (state.user && e.target.closest('.sess-hit')) {
+      store.set(sessionKey(), { start: Date.now() / 1000 });
+      render();
+    }
+  });
+
+  applyTheme();
+  render();
+  poll();
+  notify({ type: 'mcsr:ready', defaults: DEFAULTS });
+})();
+</script>
+</body>
+</html>

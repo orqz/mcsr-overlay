@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCSR Overlay Customizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #0b0c0f; --surface: #111216; --line: #1d1f25; --line2: #2a2d35;
+    --text: #e7e9ee; --muted: #8b909b; --faint: #5d626c; --ok: #4ade80; --bad: #f87171;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--text); font: 400 13px/1.4 'Geist', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  button, input, select { font: inherit; color: inherit; }
+
+  .app { display: grid; grid-template-columns: 320px minmax(0, 1fr); height: 100vh; }
+  aside { overflow-y: auto; background: var(--surface); border-right: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .brand h1 { margin: 0; font-size: 14px; font-weight: 600; }
+  .brand p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+
+  .grp { padding: 14px 20px 14px; border-bottom: 1px solid var(--line); }
+  .grp h2 { margin: 0 0 6px; font-size: 12px; font-weight: 600; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
+  .row > .lbl { flex: none; color: var(--muted); }
+  label.row { cursor: pointer; }
+  .row.stack { flex-direction: column; align-items: stretch; gap: 6px; padding: 4px 0; }
+  .row.hide { display: none; }
+
+  .input { width: 100%; height: 32px; padding: 0 10px; border: 1px solid var(--line2); border-radius: 6px; background: var(--bg); outline: none; }
+  .input:focus { border-color: #4a4e58; }
+  select.input { width: auto; min-width: 150px; padding-right: 28px; appearance: none; cursor: pointer;
+    background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238b909b' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center; }
+  .status { min-height: 16px; font-size: 12px; color: var(--muted); }
+  .status .dot { display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; background: var(--faint); }
+  .status.ok .dot { background: var(--ok); } .status.bad { color: var(--bad); } .status.bad .dot { background: var(--bad); }
+
+  .seg { display: inline-flex; padding: 2px; border: 1px solid var(--line2); border-radius: 6px; background: var(--bg); }
+  .seg button { height: 24px; padding: 0 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-size: 12px; cursor: pointer; }
+  .seg button:hover { color: var(--text); }
+  .seg button.on { background: var(--line2); color: var(--text); }
+
+  .sw { position: relative; flex: none; width: 28px; height: 16px; }
+  .sw input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+  .sw i { position: absolute; inset: 0; border-radius: 99px; background: var(--line2); transition: background .15s; pointer-events: none; }
+  .sw i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #8b909b; transition: transform .15s, background .15s; }
+  .sw input:checked + i { background: var(--text); }
+  .sw input:checked + i::after { transform: translateX(12px); background: var(--bg); }
+  .sw input:focus-visible + i { outline: 2px solid #4a4e58; outline-offset: 2px; }
+
+  .rng { display: flex; align-items: center; gap: 10px; flex: 1; max-width: 180px; }
+  .rng output { width: 40px; text-align: right; font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted); }
+  input[type=range] { flex: 1; height: 16px; margin: 0; background: none; appearance: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track { height: 2px; border-radius: 1px; background: var(--line2); }
+  input[type=range]::-webkit-slider-thumb { width: 12px; height: 12px; margin-top: -5px; border-radius: 50%; background: var(--text); appearance: none; }
+  input[type=range]::-moz-range-track { height: 2px; background: var(--line2); }
+  input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: var(--text); }
+
+  .clr { display: flex; align-items: center; gap: 8px; }
+  .clr input[type=color] { width: 22px; height: 22px; padding: 0; border: 1px solid var(--line2); border-radius: 5px; background: none; cursor: pointer; }
+  .clr input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+  .clr input[type=color]::-webkit-color-swatch { border: 0; border-radius: 4px; }
+  .clr .input { width: 84px; height: 28px; font-family: 'Geist Mono', monospace; font-size: 12px; }
+
+  main { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; }
+  .bar { display: flex; align-items: center; gap: 12px; height: 53px; padding: 0 20px; border-bottom: 1px solid var(--line); }
+  .bar .sp { flex: 1; }
+  .bar .lbl { color: var(--muted); }
+  .stage { position: relative; overflow: auto; }
+  .stage.bg-dark { background: #1b1d22; }
+  .stage.bg-light { background: #dfe1e6; }
+  .stage.bg-checker { background: #26282d; background-image: linear-gradient(45deg, #1d1f23 25%, transparent 25%, transparent 75%, #1d1f23 75%), linear-gradient(45deg, #1d1f23 25%, transparent 25%, transparent 75%, #1d1f23 75%); background-size: 20px 20px; background-position: 0 0, 10px 10px; }
+  iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
+
+  .out { display: grid; gap: 10px; padding: 16px 20px 18px; border-top: 1px solid var(--line); background: var(--surface); }
+  .url { display: flex; gap: 8px; }
+  .url .input { flex: 1; min-width: 0; font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted); }
+  .btn { flex: none; display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border: 1px solid var(--line2); border-radius: 6px; background: none; color: var(--text); font-weight: 500; text-decoration: none; cursor: pointer; }
+  .btn:hover { border-color: #4a4e58; }
+  .btn.primary { border-color: var(--text); background: var(--text); color: var(--bg); }
+  .btn.small { height: 28px; padding: 0 10px; font-size: 12px; }
+  .hint { margin: 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+  .hint b { font-weight: 500; color: var(--text); }
+  .hint code { font-family: 'Geist Mono', monospace; color: var(--text); }
+
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; height: auto; }
+    aside { border-right: 0; border-bottom: 1px solid var(--line); }
+    main { grid-template-rows: auto 520px auto; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand">
+      <div><h1>MCSR Ranked overlay</h1><p>Stream overlay for OBS</p></div>
+      <button class="btn small" id="reset" type="button">Reset</button>
+    </div>
+    <form id="form" autocomplete="off" onsubmit="return false"></form>
+  </aside>
+  <main>
+    <div class="bar">
+      <span class="lbl">Preview</span>
+      <div class="seg" id="stagebg">
+        <button type="button" data-bg="dark">Dark</button>
+        <button type="button" data-bg="light">Light</button>
+        <button type="button" data-bg="checker">Transparent</button>
+      </div>
+      <span class="sp"></span>
+      <button class="btn small" id="test" type="button">Test popup</button>
+    </div>
+    <div class="stage bg-dark" id="stage"><iframe id="frame" title="Overlay preview"></iframe></div>
+    <div class="out">
+      <div class="url">
+        <input class="input" id="url" readonly spellcheck="false">
+        <button class="btn primary" id="copy" type="button">Copy URL</button>
+        <a class="btn" id="open" target="_blank" rel="noopener">Open</a>
+      </div>
+      <p class="hint">
+        In OBS: <b>Sources → + → Browser</b>, untick <b>Local file</b>, paste the URL, and set the size to <b id="size">—</b>.
+        It refreshes on its own every <span id="every">30s</span>. To start a new session, right-click the source → <b>Interact</b> and double-click the session row.
+      </p>
+    </div>
+  </main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const STORE = 'mcsr-overlay:customizer';
+
+  const FONTS = [['geist', 'Geist'], ['inter', 'Inter'], ['mono', 'Geist Mono'], ['pixel', 'Pixelify Sans'], ['system', 'Segoe UI']];
+  const PRESETS = {
+    Dark:  { bg: '0f1115', bga: 92, text: 'eceef2', win: '4ade80', loss: 'f87171', font: 'geist', radius: 8, border: true, shadow: false, tshadow: false },
+    Light: { bg: 'ffffff', bga: 96, text: '111318', win: '16a34a', loss: 'dc2626', font: 'geist', radius: 8, border: true, shadow: true, tshadow: false },
+    Clear: { bg: '000000', bga: 0, text: 'ffffff', win: '4ade80', loss: 'f87171', border: false, shadow: false, tshadow: true },
+    Pixel: { bg: '1b1b1b', bga: 90, text: 'f2f2f2', win: '55ff55', loss: 'ff5555', font: 'pixel', radius: 0, border: true, shadow: false, tshadow: false },
+  };
+
+  const toggle = (k, label) => ({ k, t: 'toggle', label });
+  const SCHEMA = [
+    ['Player', [{ k: 'u', t: 'text', label: 'Minecraft username or UUID', ph: 'orq2' }]],
+    ['Layout', [
+      { k: 'layout', t: 'seg', label: 'Style', opts: [['card', 'Card'], ['bar', 'Bar']] },
+      { k: 'stats', t: 'seg', label: 'Stats from', opts: [['season', 'Season'], ['total', 'All time']] },
+      { k: 'align', t: 'seg', label: 'Align', opts: [['left', 'Left'], ['center', 'Center'], ['right', 'Right']] },
+      { k: 'valign', t: 'seg', label: 'Anchor', opts: [['top', 'Top'], ['bottom', 'Bottom']] },
+    ]],
+    ['Profile', [
+      toggle('avatar', 'Player head'), toggle('flag', 'Country flag'), toggle('tier', 'Rank tier'),
+      toggle('rank', 'Leaderboard position'), toggle('progress', 'Progress to next tier'), toggle('peak', 'Season peak'),
+    ]],
+    ['Stats', [
+      toggle('pb', 'Best time'), toggle('avg', 'Average time'), toggle('wl', 'Wins – losses'), toggle('wr', 'Winrate'),
+      toggle('streak', 'Win streak'), toggle('ff', 'Forfeit rate'), toggle('played', 'Matches played'),
+    ]],
+    ['Session', [
+      toggle('session', 'Session elo and record'),
+      { k: 'reset', t: 'range', label: 'Reset when idle', min: 1, max: 24, step: 1, unit: 'h' },
+    ]],
+    ['Matches', [
+      { k: 'matches', t: 'range', label: 'Shown', min: 0, max: 15, step: 1, unit: '' },
+      toggle('oppelo', 'Opponent elo'), toggle('seed', 'Seed type'), toggle('ago', 'Time since match'),
+      toggle('popup', 'Popup on new match'),
+    ]],
+    ['Appearance', [
+      { t: 'presets', label: 'Preset' },
+      { k: 'font', t: 'select', label: 'Font', opts: FONTS },
+      { k: 'bg', t: 'color', label: 'Background' },
+      { k: 'bga', t: 'range', label: 'Opacity', min: 0, max: 100, step: 1, unit: '%' },
+      { k: 'text', t: 'color', label: 'Text' },
+      { k: 'win', t: 'color', label: 'Win' },
+      { k: 'loss', t: 'color', label: 'Loss' },
+      { k: 'scale', t: 'range', label: 'Scale', min: 50, max: 250, step: 5, unit: '%' },
+      { k: 'width', t: 'range', label: 'Width', min: 260, max: 520, step: 10, unit: '', only: 'card' },
+      { k: 'radius', t: 'range', label: 'Corners', min: 0, max: 20, step: 1, unit: '' },
+      toggle('border', 'Border'), toggle('shadow', 'Drop shadow'), toggle('tshadow', 'Text shadow'),
+    ]],
+    ['Updates', [{ k: 'refresh', t: 'range', label: 'Refresh every', min: 15, max: 180, step: 5, unit: 's' }]],
+  ];
+
+  const frame = $('#frame'), stage = $('#stage'), form = $('#form');
+  let DEFAULTS = null, S = null, size = null, pushTimer = 0;
+
+  const load = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+  const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const hex6 = h => (h.length === 3 ? h.split('').map(c => c + c).join('') : h).toLowerCase();
+
+  // ---------- form ----------
+  function fieldHtml(f) {
+    const only = f.only ? ` data-only="${f.only}"` : '';
+    switch (f.t) {
+      case 'text':
+        return `<div class="row stack"><span class="lbl">${f.label}</span>
+          <input class="input" type="text" data-k="${f.k}" placeholder="${f.ph}" spellcheck="false">
+          <div class="status" id="status"><span class="dot"></span>Waiting for preview</div></div>`;
+      case 'seg':
+        return `<div class="row"${only}><span class="lbl">${f.label}</span><div class="seg" data-k="${f.k}">` +
+          f.opts.map(([v, l]) => `<button type="button" data-v="${v}">${l}</button>`).join('') + '</div></div>';
+      case 'toggle':
+        return `<label class="row"${only}><span class="lbl">${f.label}</span><span class="sw"><input type="checkbox" data-k="${f.k}"><i></i></span></label>`;
+      case 'range':
+        return `<label class="row"${only}><span class="lbl">${f.label}</span><span class="rng">
+          <input type="range" data-k="${f.k}" min="${f.min}" max="${f.max}" step="${f.step}"><output data-out="${f.k}" data-unit="${f.unit}"></output></span></label>`;
+      case 'select':
+        return `<label class="row"${only}><span class="lbl">${f.label}</span><select class="input" data-k="${f.k}">` +
+          f.opts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('') + '</select></label>';
+      case 'color':
+        return `<div class="row"${only}><span class="lbl">${f.label}</span><span class="clr">
+          <input type="color" data-k="${f.k}"><input class="input" type="text" data-hex="${f.k}" maxlength="7" spellcheck="false"></span></div>`;
+      case 'presets':
+        return `<div class="row"><span class="lbl">${f.label}</span><div class="seg" id="presets">` +
+          Object.keys(PRESETS).map(p => `<button type="button" data-preset="${p}">${p}</button>`).join('') + '</div></div>';
+    }
+    return '';
+  }
+
+  function buildForm() {
+    form.innerHTML = SCHEMA.map(([title, fields]) => `<section class="grp"><h2>${title}</h2>${fields.map(fieldHtml).join('')}</section>`).join('');
+
+    form.addEventListener('input', e => {
+      const el = e.target, k = el.dataset.k, hx = el.dataset.hex;
+      if (k) {
+        if (el.type === 'checkbox') S[k] = el.checked;
+        else if (el.type === 'range') S[k] = Number(el.value);
+        else if (el.type === 'color') S[k] = el.value.slice(1);
+        else S[k] = el.value.trim();
+        changed(k === 'u' ? 500 : 0);
+      } else if (hx) {
+        const v = el.value.replace('#', '').trim();
+        if (/^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) { S[hx] = v.toLowerCase(); changed(0); }
+      }
+    });
+    form.addEventListener('click', e => {
+      const opt = e.target.closest('[data-v]');
+      if (opt) { S[opt.parentNode.dataset.k] = opt.dataset.v; changed(0); }
+      const pre = e.target.closest('[data-preset]');
+      if (pre) { Object.assign(S, PRESETS[pre.dataset.preset]); changed(0); }
+    });
+  }
+
+  function sync() {
+    const focused = document.activeElement;
+    form.querySelectorAll('[data-k]').forEach(el => {
+      const k = el.dataset.k, v = S[k];
+      if (el.classList.contains('seg')) el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+      else if (el.type === 'checkbox') el.checked = !!v;
+      else if (el.type === 'color') el.value = '#' + hex6(v);
+      else if (el !== focused) el.value = v;
+    });
+    form.querySelectorAll('[data-hex]').forEach(el => { if (el !== focused) el.value = '#' + hex6(S[el.dataset.hex]); });
+    form.querySelectorAll('[data-out]').forEach(el => { el.textContent = S[el.dataset.out] + el.dataset.unit; });
+    form.querySelectorAll('[data-only]').forEach(el => el.classList.toggle('hide', el.dataset.only !== S.layout));
+    form.querySelectorAll('[data-preset]').forEach(b => {
+      const p = PRESETS[b.dataset.preset];
+      b.classList.toggle('on', Object.keys(p).every(k => String(S[k]).toLowerCase() === String(p[k]).toLowerCase()));
+    });
+    $('#every').textContent = S.refresh + 's';
+  }
+
+  function changed(delay) {
+    save(STORE, S);
+    sync();
+    updateUrl();
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(push, delay);
+  }
+
+  // ---------- output ----------
+  function overlayUrl() {
+    const p = new URLSearchParams();
+    p.set('u', S.u || 'YourName');
+    for (const k in DEFAULTS) {
+      if (k === 'u' || S[k] === DEFAULTS[k]) continue;
+      p.set(k, typeof S[k] === 'boolean' ? (S[k] ? 1 : 0) : S[k]);
+    }
+    return new URL('overlay.html', location.href).href + '?' + p.toString();
+  }
+  function updateUrl() {
+    const url = overlayUrl();
+    $('#url').value = url;
+    $('#open').href = url;
+  }
+  function push() {
+    frame.contentWindow.postMessage({ type: 'mcsr:config', cfg: S }, '*');
+  }
+
+  function fit() {
+    if (!size) return;
+    frame.style.width = Math.max(stage.clientWidth, size.w) + 'px';
+    frame.style.height = Math.max(stage.clientHeight, size.h) + 'px';
+  }
+  function showStatus(d) {
+    const el = $('#status');
+    if (!el) return;
+    el.className = 'status ' + (d.ok ? 'ok' : 'bad');
+    el.innerHTML = '<span class="dot"></span>' + (d.ok
+      ? `${d.nickname} · ${d.elo == null ? 'unrated' : d.elo + ' elo'}`
+      : d.notFound ? 'No ranked profile with that name' : 'Can’t reach the MCSR Ranked API');
+  }
+
+  // ---------- wiring ----------
+  window.addEventListener('message', e => {
+    if (e.source !== frame.contentWindow || !e.data) return;
+    const d = e.data;
+    if (d.type === 'mcsr:ready') {
+      if (!DEFAULTS) {
+        DEFAULTS = d.defaults;
+        const saved = load(STORE) || { u: 'orq2' };
+        S = Object.assign({}, DEFAULTS);
+        for (const k in DEFAULTS) if (saved[k] !== undefined && typeof saved[k] === typeof DEFAULTS[k]) S[k] = saved[k];
+        buildForm();
+        sync();
+        updateUrl();
+      }
+      push();
+    } else if (d.type === 'mcsr:size') {
+      size = d;
+      $('#size').textContent = `${Math.ceil(d.w / 10) * 10} × ${Math.ceil(d.h / 10) * 10}`;
+      fit();
+    } else if (d.type === 'mcsr:status') {
+      showStatus(d);
+    }
+  });
+
+  $('#reset').addEventListener('click', () => { if (S) { S = Object.assign({}, DEFAULTS, { u: S.u }); changed(0); } });
+  $('#test').addEventListener('click', () => frame.contentWindow.postMessage({ type: 'mcsr:test-popup' }, '*'));
+  $('#copy').addEventListener('click', async e => {
+    const btn = e.currentTarget, input = $('#url');
+    try { await navigator.clipboard.writeText(input.value); }
+    catch (err) { input.select(); document.execCommand('copy'); }
+    btn.textContent = 'Copied';
+    setTimeout(() => { btn.textContent = 'Copy URL'; }, 1400);
+  });
+
+  const setBg = v => {
+    stage.className = 'stage bg-' + v;
+    document.querySelectorAll('#stagebg button').forEach(b => b.classList.toggle('on', b.dataset.bg === v));
+    save(STORE + ':bg', v);
+  };
+  $('#stagebg').addEventListener('click', e => { const b = e.target.closest('[data-bg]'); if (b) setBg(b.dataset.bg); });
+  setBg(load(STORE + ':bg') || 'dark');
+  window.addEventListener('resize', fit);
+
+  frame.src = 'overlay.html?preview=1'; // set after the listener so the ready message isn't missed
+})();
+</script>
+</body>
+</html>
