@@ -23,21 +23,54 @@
   .brand h1 { margin: 0; font-size: 14px; font-weight: 600; }
   .brand p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
 
-  .grp { padding: 14px 20px 14px; border-bottom: 1px solid var(--line); }
-  .grp h2 { margin: 0 0 6px; font-size: 12px; font-weight: 600; }
+  .grp { padding: 14px 20px 16px; border-bottom: 1px solid var(--line); }
+  .grp h2 { margin: 0 0 10px; font-size: 12px; font-weight: 600; }
+  .sub { margin: 12px 0 6px; font-size: 11px; color: var(--muted); }
+  h2 + div > .sub { margin-top: 0; }
   .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
   .row > .lbl { flex: none; color: var(--muted); }
   label.row { cursor: pointer; }
-  .row.stack { flex-direction: column; align-items: stretch; gap: 6px; padding: 4px 0; }
-  .row.hide { display: none; }
+  .hide { display: none !important; }
 
   .input { width: 100%; height: 32px; padding: 0 10px; border: 1px solid var(--line2); border-radius: 6px; background: var(--bg); outline: none; }
   .input:focus { border-color: #4a4e58; }
   select.input { width: auto; min-width: 150px; padding-right: 28px; appearance: none; cursor: pointer;
     background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238b909b' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center; }
-  .status { min-height: 16px; font-size: 12px; color: var(--muted); }
+  .status { min-height: 16px; margin-top: 6px; font-size: 12px; color: var(--muted); }
   .status .dot { display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; background: var(--faint); }
   .status.ok .dot { background: var(--ok); } .status.bad { color: var(--bad); } .status.bad .dot { background: var(--bad); }
+
+  /* layout + theme pickers */
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tile { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px 10px; border: 1px solid var(--line2); border-radius: 8px; background: var(--bg); color: var(--muted); text-align: left; cursor: pointer; }
+  .tile:hover { border-color: #3a3e47; }
+  .tile.on { border-color: var(--text); color: var(--text); }
+  .tile svg { display: block; width: 100%; height: auto; margin-bottom: 6px; color: var(--muted); }
+  .tile.on svg { color: var(--text); }
+  .tile .tn { font-weight: 500; color: var(--text); }
+  .tile .td { font-size: 11px; color: var(--muted); }
+  /* style previews: tiny versions of each style, using MCSR's own badge */
+  .sp { display: flex; align-items: center; gap: 7px; width: 100%; height: 50px; margin-bottom: 6px; padding: 0 10px; border-radius: 4px; }
+  .sp i { display: block; height: 3px; margin: 3px 0; border-radius: 1px; background: #fff; }
+  .sp .lines { flex: 1; }
+  .sp .rk { flex: none; width: 30px; height: 30px; background-size: 180px 90px; background-position: -60px -60px; image-rendering: pixelated; }
+  .sp-badge { flex-direction: column; justify-content: center; gap: 2px; background: #2e3a2b; }
+  .sp-badge .rk { width: 24px; height: 24px; background-size: 144px 72px; background-position: -48px -48px; }
+  .sp-badge .lines { flex: none; width: 50%; }
+  .sp-badge i { margin: 2px auto; }
+  .sp-tooltip { background: #100010; box-shadow: inset 0 0 0 2px #100010, inset 0 0 0 4px #2c0b6e; }
+  .sp-banner { gap: 0; padding: 0; background: #181b20; box-shadow: inset 0 2px 0 #2ce0d8, inset 0 -2px 0 #2ce0d8; }
+  .sp-banner .tl { display: flex; align-items: center; height: 100%; padding: 0 8px; background: rgba(44,224,216,.16); }
+  .sp-banner .lines { padding: 0 8px; }
+  .sp-clean { background: #0f1115; box-shadow: inset 0 0 0 1px #24272e; }
+  .sp-clean .hsq { flex: none; width: 18px; height: 18px; border-radius: 3px; background: #6b7280; }
+  .sp-clean b { flex: none; width: 16px; height: 8px; border-radius: 1px; background: #fff; }
+
+  /* show / hide chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { height: 28px; padding: 0 10px; border: 1px solid var(--line2); border-radius: 6px; background: none; color: var(--muted); font-size: 12px; cursor: pointer; }
+  .chip:hover { color: var(--text); }
+  .chip.on { border-color: var(--line2); background: var(--line2); color: var(--text); }
 
   .seg { display: inline-flex; padding: 2px; border: 1px solid var(--line2); border-radius: 6px; background: var(--bg); }
   .seg button { height: 24px; padding: 0 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-size: 12px; cursor: pointer; }
@@ -64,19 +97,30 @@
   .clr input[type=color] { width: 22px; height: 22px; padding: 0; border: 1px solid var(--line2); border-radius: 5px; background: none; cursor: pointer; }
   .clr input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
   .clr input[type=color]::-webkit-color-swatch { border: 0; border-radius: 4px; }
-  .clr .input { width: 84px; height: 28px; font-family: 'Geist Mono', monospace; font-size: 12px; }
+  .clr .input { width: 78px; height: 28px; font-family: 'Geist Mono', monospace; font-size: 12px; }
+  .clr .chip { height: 28px; padding: 0 8px; }
+  aside { overflow-x: hidden; }
+  .rng { min-width: 0; }
 
-  main { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; }
+  details.grp > summary { display: flex; align-items: center; justify-content: space-between; margin: -2px 0; font-size: 12px; font-weight: 600; list-style: none; cursor: pointer; }
+  details.grp > summary::-webkit-details-marker { display: none; }
+  details.grp > summary::after { content: ''; width: 7px; height: 7px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: rotate(45deg) translate(-2px, -2px); transition: transform .15s; }
+  details.grp[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
+  details.grp[open] > summary { margin-bottom: 10px; }
+
+  main { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; }
   .bar { display: flex; align-items: center; gap: 12px; height: 53px; padding: 0 20px; border-bottom: 1px solid var(--line); }
   .bar .sp { flex: 1; }
   .bar .lbl { color: var(--muted); }
   .stage { position: relative; overflow: auto; }
+  .stage.bg-game { background: linear-gradient(180deg, #86aee0 0, #b3cdea 52%, #5f8f3c 52%, #4e7a31 62%, #74512f 62%, #5c3f24 100%); }
+  .stage.bg-green { background: #00b140; }
   .stage.bg-dark { background: #1b1d22; }
   .stage.bg-light { background: #dfe1e6; }
   .stage.bg-checker { background: #26282d; background-image: linear-gradient(45deg, #1d1f23 25%, transparent 25%, transparent 75%, #1d1f23 75%), linear-gradient(45deg, #1d1f23 25%, transparent 25%, transparent 75%, #1d1f23 75%); background-size: 20px 20px; background-position: 0 0, 10px 10px; }
   iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
 
-  .out { display: grid; gap: 10px; padding: 16px 20px 18px; border-top: 1px solid var(--line); background: var(--surface); }
+  .out { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 16px 20px 18px; border-top: 1px solid var(--line); background: var(--surface); }
   .url { display: flex; gap: 8px; }
   .url .input { flex: 1; min-width: 0; font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted); }
   .btn { flex: none; display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border: 1px solid var(--line2); border-radius: 6px; background: none; color: var(--text); font-weight: 500; text-decoration: none; cursor: pointer; }
@@ -85,10 +129,9 @@
   .btn.small { height: 28px; padding: 0 10px; font-size: 12px; }
   .hint { margin: 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
   .hint b { font-weight: 500; color: var(--text); }
-  .hint code { font-family: 'Geist Mono', monospace; color: var(--text); }
 
   @media (max-width: 860px) {
-    .app { grid-template-columns: 1fr; height: auto; }
+    .app { grid-template-columns: minmax(0, 1fr); height: auto; }
     aside { border-right: 0; border-bottom: 1px solid var(--line); }
     main { grid-template-rows: auto 520px auto; }
   }
@@ -107,8 +150,10 @@
     <div class="bar">
       <span class="lbl">Preview</span>
       <div class="seg" id="stagebg">
+        <button type="button" data-bg="game">Gameplay</button>
         <button type="button" data-bg="dark">Dark</button>
-        <button type="button" data-bg="light">Light</button>
+        <button type="button" data-bg="light">Bright</button>
+        <button type="button" data-bg="green">Green</button>
         <button type="button" data-bg="checker">Transparent</button>
       </div>
       <span class="sp"></span>
@@ -123,7 +168,7 @@
       </div>
       <p class="hint">
         In OBS: <b>Sources → + → Browser</b>, untick <b>Local file</b>, paste the URL, and set the size to <b id="size">—</b>.
-        It refreshes on its own every <span id="every">30s</span>. To start a new session, right-click the source → <b>Interact</b> and double-click the session row.
+        It refreshes on its own every <span id="every">30s</span>; ticking <b>Shutdown source when not visible</b> is fine. To start a new session, right-click the source → <b>Interact</b> and double-click the session.
       </p>
     </div>
   </main>
@@ -133,96 +178,144 @@
 (() => {
   'use strict';
   const $ = s => document.querySelector(s);
-  const STORE = 'mcsr-overlay:customizer';
+  const STORE = 'mcsr-overlay:customizer:v3';
 
-  const FONTS = [['geist', 'Geist'], ['inter', 'Inter'], ['mono', 'Geist Mono'], ['pixel', 'Pixelify Sans'], ['system', 'Segoe UI']];
-  const PRESETS = {
-    Dark:  { bg: '0f1115', bga: 92, text: 'eceef2', win: '4ade80', loss: 'f87171', font: 'geist', radius: 8, border: true, shadow: false, tshadow: false },
-    Light: { bg: 'ffffff', bga: 96, text: '111318', win: '16a34a', loss: 'dc2626', font: 'geist', radius: 8, border: true, shadow: true, tshadow: false },
-    Clear: { bg: '000000', bga: 0, text: 'ffffff', win: '4ade80', loss: 'f87171', border: false, shadow: false, tshadow: true },
-    Pixel: { bg: '1b1b1b', bga: 90, text: 'f2f2f2', win: '55ff55', loss: 'ff5555', font: 'pixel', radius: 0, border: true, shadow: false, tshadow: false },
-  };
-
-  const toggle = (k, label) => ({ k, t: 'toggle', label });
-  const SCHEMA = [
-    ['Player', [{ k: 'u', t: 'text', label: 'Minecraft username or UUID', ph: 'orq2' }]],
-    ['Layout', [
-      { k: 'layout', t: 'seg', label: 'Style', opts: [['card', 'Card'], ['bar', 'Bar']] },
-      { k: 'stats', t: 'seg', label: 'Stats from', opts: [['season', 'Season'], ['total', 'All time']] },
-      { k: 'align', t: 'seg', label: 'Align', opts: [['left', 'Left'], ['center', 'Center'], ['right', 'Right']] },
-      { k: 'valign', t: 'seg', label: 'Anchor', opts: [['top', 'Top'], ['bottom', 'Bottom']] },
-    ]],
-    ['Profile', [
-      toggle('avatar', 'Player head'), toggle('flag', 'Country flag'), toggle('tier', 'Rank tier'),
-      toggle('rank', 'Leaderboard position'), toggle('progress', 'Progress to next tier'), toggle('peak', 'Season peak'),
-    ]],
-    ['Stats', [
-      toggle('pb', 'Best time'), toggle('avg', 'Average time'), toggle('wl', 'Wins – losses'), toggle('wr', 'Winrate'),
-      toggle('streak', 'Win streak'), toggle('ff', 'Forfeit rate'), toggle('played', 'Matches played'),
-    ]],
-    ['Session', [
-      toggle('session', 'Session elo and record'),
-      { k: 'reset', t: 'range', label: 'Reset when idle', min: 1, max: 24, step: 1, unit: 'h' },
-    ]],
-    ['Matches', [
-      { k: 'matches', t: 'range', label: 'Shown', min: 0, max: 15, step: 1, unit: '' },
-      toggle('oppelo', 'Opponent elo'), toggle('seed', 'Seed type'), toggle('ago', 'Time since match'),
-      toggle('popup', 'Popup on new match'),
-    ]],
-    ['Appearance', [
-      { t: 'presets', label: 'Preset' },
-      { k: 'font', t: 'select', label: 'Font', opts: FONTS },
-      { k: 'bg', t: 'color', label: 'Background' },
-      { k: 'bga', t: 'range', label: 'Opacity', min: 0, max: 100, step: 1, unit: '%' },
-      { k: 'text', t: 'color', label: 'Text' },
-      { k: 'win', t: 'color', label: 'Win' },
-      { k: 'loss', t: 'color', label: 'Loss' },
-      { k: 'scale', t: 'range', label: 'Scale', min: 50, max: 250, step: 5, unit: '%' },
-      { k: 'width', t: 'range', label: 'Width', min: 260, max: 520, step: 10, unit: '', only: 'card' },
-      { k: 'radius', t: 'range', label: 'Corners', min: 0, max: 20, step: 1, unit: '' },
-      toggle('border', 'Border'), toggle('shadow', 'Drop shadow'), toggle('tshadow', 'Text shadow'),
-    ]],
-    ['Updates', [{ k: 'refresh', t: 'range', label: 'Refresh every', min: 15, max: 180, step: 5, unit: 's' }]],
+  // Wireframe thumbnails for the layout picker (120×56, drawn in currentColor).
+  const wire = inner => `<svg viewBox="0 0 120 56" fill="currentColor" aria-hidden="true">${inner}</svg>`;
+  const rows = (x, y0, n, gap) => Array.from({ length: n }, (_, i) => {
+    const y = y0 + i * gap;
+    return `<rect x="${x}" y="${y}" width="3" height="3" rx=".5" opacity=".9"/><rect x="${x + 6}" y="${y}" width="18" height="3" rx="1" opacity=".5"/><rect x="${x + 32}" y="${y}" width="8" height="3" rx="1" opacity=".35"/><rect x="${x + 43}" y="${y}" width="6" height="3" rx="1" opacity=".7"/>`;
+  }).join('');
+  const LAYOUTS = [
+    ['card', 'Card', 'Everything, stacked', wire(
+      `<rect x="33" y="2" width="54" height="52" rx="4" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+       <rect x="38" y="7" width="8" height="8" rx="1.5" opacity=".6"/><rect x="49" y="8" width="16" height="3" rx="1" opacity=".8"/><rect x="49" y="12.5" width="9" height="2" rx="1" opacity=".4"/>
+       <rect x="71" y="7" width="11" height="6" rx="1" opacity=".9"/><rect x="38" y="19" width="44" height="1" opacity=".3"/><rect x="38" y="19" width="26" height="1" opacity=".8"/>
+       <rect x="38" y="24" width="11" height="4" rx="1" opacity=".6"/><rect x="54" y="24" width="8" height="4" rx="1" opacity=".6"/><rect x="67" y="24" width="8" height="4" rx="1" opacity=".6"/>` + rows(36, 33, 4, 5))],
+    ['bar', 'Bar', 'One line, top or bottom', wire(
+      `<rect x="4" y="21" width="112" height="14" rx="3" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+       <rect x="7" y="24" width="8" height="8" rx="1.5" opacity=".6"/><rect x="18" y="25" width="14" height="3" rx="1" opacity=".8"/><rect x="18" y="29.5" width="8" height="2" rx="1" opacity=".4"/>
+       <rect x="37" y="24" width="1" height="8" opacity=".3"/><rect x="42" y="25" width="10" height="5" rx="1" opacity=".9"/>
+       <rect x="57" y="26" width="9" height="4" rx="1" opacity=".55"/><rect x="70" y="26" width="9" height="4" rx="1" opacity=".55"/><rect x="83" y="26" width="7" height="4" rx="1" opacity=".55"/>
+       <rect x="94" y="24" width="1" height="8" opacity=".3"/><rect x="99" y="26" width="4" height="4" rx="1" opacity=".8"/><rect x="105" y="26" width="4" height="4" rx="1" opacity=".8"/><rect x="111" y="26" width="2" height="4" rx="1" opacity=".8"/>`)],
+    ['compact', 'Compact', 'Just elo and session', wire(
+      `<rect x="28" y="16" width="64" height="24" rx="4" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+       <rect x="33" y="21" width="12" height="12" rx="2" opacity=".6"/><rect x="49" y="22" width="16" height="3" rx="1" opacity=".8"/><rect x="49" y="27" width="10" height="2" rx="1" opacity=".4"/>
+       <rect x="72" y="21" width="15" height="8" rx="1" opacity=".9"/><rect x="76" y="31" width="11" height="2" rx="1" opacity=".4"/>
+       <rect x="28.5" y="38" width="38" height="1.5" opacity=".8"/>`)],
+    ['matches', 'Matches', 'Recent results only', wire(
+      `<rect x="33" y="4" width="54" height="48" rx="4" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+       <rect x="38" y="9" width="14" height="3" rx="1" opacity=".8"/><rect x="55" y="9" width="10" height="3" rx="1" opacity=".4"/><rect x="73" y="9" width="9" height="3" rx="1" opacity=".5"/>
+       <rect x="38" y="15" width="44" height="1" opacity=".3"/>` + rows(37, 20, 5, 6))],
   ];
 
-  const frame = $('#frame'), stage = $('#stage'), form = $('#form');
-  let DEFAULTS = null, S = null, size = null, pushTimer = 0;
+  // Previews for the style picker; the badge is MCSR's own sprite, sent by the overlay.
+  const STYLES = [
+    ['badge', 'Badge', 'Rank badge, no box', '<div class="sp sp-badge"><span class="rk"></span><div class="lines"><i></i><i style="width:70%;opacity:.5"></i></div></div>'],
+    ['tooltip', 'Tooltip', 'Minecraft item tooltip', '<div class="sp sp-tooltip"><span class="rk"></span><div class="lines"><i style="width:60%;background:#2ce0d8"></i><i style="width:85%;opacity:.5"></i><i style="width:45%;opacity:.5"></i></div></div>'],
+    ['banner', 'Banner', 'Broadcast graphics', '<div class="sp sp-banner"><div class="tl"><span class="rk"></span></div><div class="lines"><i style="width:55%"></i><i style="width:80%;background:#2ce0d8;opacity:.7"></i></div></div>'],
+    ['clean', 'Clean', 'Minimal panel', '<div class="sp sp-clean"><span class="hsq"></span><div class="lines"><i style="width:60%"></i><i style="width:40%;opacity:.5"></i></div><b></b></div>'],
+  ];
 
-  const load = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+  // What to show. The third value lists the layouts an option applies to; it's hidden for the others.
+  const ALL = 'card bar compact matches';
+  const SHOW = [
+    ['Profile', ALL, [['avatar', 'Head', 'card bar compact'], ['flag', 'Flag', ALL], ['tier', 'Tier', 'card bar compact'],
+      ['rank', 'Rank #', 'card bar compact'], ['peak', 'Peak', 'card bar'], ['progress', 'Tier progress', 'card bar compact']]],
+    ['Stats', 'card bar', [['pb', 'Best time'], ['avg', 'Avg time'], ['wl', 'W–L'], ['wr', 'Winrate'], ['streak', 'Streak'], ['ff', 'FF rate'], ['played', 'Played']]],
+    ['Matches', 'card bar matches', [['oppelo', 'Opponent elo', 'card matches'], ['heads', 'Opponent heads', 'card matches'],
+      ['seed', 'Seed icons', 'card matches'], ['ago', 'Time ago', 'card matches']]],
+    ['Session', ALL, [['session', 'Session elo'], ['sesstime', 'Session time'], ['sessstreak', 'Session streak'], ['popup', 'New-match popup']]],
+  ];
+  const GOALS = ['Iron I', 'Iron II', 'Iron III', 'Gold I', 'Gold II', 'Gold III', 'Emerald I', 'Emerald II', 'Emerald III', 'Diamond I', 'Diamond II', 'Diamond III', 'Netherite'];
+  const SIZES = [[80, 'Small'], [100, 'Medium'], [125, 'Large']];
+  // Color palettes; Default goes back to the style's own colors.
+  const PALETTES = {
+    Default: null,
+    Mono: { accent: 'e5e7eb', muted: '9ca3af', edge: '2a2d33' },
+    Ice: { bg: '0b1220', text: 'e6f1ff', accent: '7dd3fc', muted: '8aa0b8', edge: '1e2a3b' },
+    Violet: { bg: '120d1c', text: 'f3eefe', accent: 'a78bfa', muted: '9a8fb5', edge: '2a2140' },
+    Amber: { bg: '17130c', text: 'fbf3e4', accent: 'f5b544', muted: 'a89a80', edge: '2e271a' },
+    Emerald: { bg: '0b1510', text: 'eafbf1', accent: '34d399', muted: '86a897', edge: '1c2b23' },
+  };
+  const FONTS = [['rubik', 'Rubik'], ['mc', 'Monocraft'], ['geist', 'Geist'], ['inter', 'Inter'], ['pixel', 'Pixelify Sans'], ['mono', 'Geist Mono'], ['system', 'Segoe UI']];
+
+  const frame = $('#frame'), stage = $('#stage'), form = $('#form');
+  let DEFAULTS = null, THEMES = null, SPRITE = '', S = null, size = null, pushTimer = 0;
+  // The value a setting falls back to for the current style (styles bring their own colors and font).
+  const fallback = k => (THEMES[S.style] && k in THEMES[S.style] ? THEMES[S.style][k] : DEFAULTS[k]);
+
+  const load = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
   const hex6 = h => (h.length === 3 ? h.split('').map(c => c + c).join('') : h).toLowerCase();
 
-  // ---------- form ----------
-  function fieldHtml(f) {
-    const only = f.only ? ` data-only="${f.only}"` : '';
-    switch (f.t) {
-      case 'text':
-        return `<div class="row stack"><span class="lbl">${f.label}</span>
-          <input class="input" type="text" data-k="${f.k}" placeholder="${f.ph}" spellcheck="false">
-          <div class="status" id="status"><span class="dot"></span>Waiting for preview</div></div>`;
-      case 'seg':
-        return `<div class="row"${only}><span class="lbl">${f.label}</span><div class="seg" data-k="${f.k}">` +
-          f.opts.map(([v, l]) => `<button type="button" data-v="${v}">${l}</button>`).join('') + '</div></div>';
-      case 'toggle':
-        return `<label class="row"${only}><span class="lbl">${f.label}</span><span class="sw"><input type="checkbox" data-k="${f.k}"><i></i></span></label>`;
-      case 'range':
-        return `<label class="row"${only}><span class="lbl">${f.label}</span><span class="rng">
-          <input type="range" data-k="${f.k}" min="${f.min}" max="${f.max}" step="${f.step}"><output data-out="${f.k}" data-unit="${f.unit}"></output></span></label>`;
-      case 'select':
-        return `<label class="row"${only}><span class="lbl">${f.label}</span><select class="input" data-k="${f.k}">` +
-          f.opts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('') + '</select></label>';
-      case 'color':
-        return `<div class="row"${only}><span class="lbl">${f.label}</span><span class="clr">
-          <input type="color" data-k="${f.k}"><input class="input" type="text" data-hex="${f.k}" maxlength="7" spellcheck="false"></span></div>`;
-      case 'presets':
-        return `<div class="row"><span class="lbl">${f.label}</span><div class="seg" id="presets">` +
-          Object.keys(PRESETS).map(p => `<button type="button" data-preset="${p}">${p}</button>`).join('') + '</div></div>';
-    }
-    return '';
-  }
+  // ---------- controls ----------
+  const forAttr = f => f ? ` data-for="${f}"` : '';
+  const seg = (k, label, opts, f) => `<div class="row"${forAttr(f)}><span class="lbl">${label}</span><div class="seg" data-k="${k}">` +
+    opts.map(([v, l]) => `<button type="button" data-v="${v}">${l}</button>`).join('') + '</div></div>';
+  const range = (k, label, min, max, step, unit, f) => `<label class="row"${forAttr(f)}><span class="lbl">${label}</span><span class="rng">
+    <input type="range" data-k="${k}" min="${min}" max="${max}" step="${step}"><output data-out="${k}" data-unit="${unit}"></output></span></label>`;
+  const toggle = (k, label) => `<label class="row"><span class="lbl">${label}</span><span class="sw"><input type="checkbox" data-k="${k}"><i></i></span></label>`;
+  const color = (k, label, auto) => `<div class="row"><span class="lbl">${label}</span><span class="clr">
+    <input type="color" data-k="${k}"><input class="input" type="text" data-hex="${k}" maxlength="7" spellcheck="false"${auto ? ' placeholder="Auto"' : ''}>
+    ${auto ? `<button type="button" class="chip" data-auto="${k}">Auto</button>` : ''}</span></div>`;
 
   function buildForm() {
-    form.innerHTML = SCHEMA.map(([title, fields]) => `<section class="grp"><h2>${title}</h2>${fields.map(fieldHtml).join('')}</section>`).join('');
+    const show = SHOW.map(([title, f, items]) => `<div data-for="${f}"><div class="sub">${title}</div>` +
+      (title === 'Stats' ? seg('stats', 'From', [['season', 'This season'], ['total', 'All time']]) : '') +
+      (title === 'Matches' ? range('matches', 'Shown', 0, 15, 1, '') : '') +
+      `<div class="chips">${items.map(([k, l, ff]) => `<button type="button" class="chip" data-chip="${k}"${forAttr(ff)}>${l}</button>`).join('')}</div></div>`).join('');
+
+    form.innerHTML = `
+      <section class="grp"><h2>Player</h2>
+        <input class="input" type="text" data-k="u" placeholder="Minecraft username or UUID" spellcheck="false">
+        <div class="status" id="status"><span class="dot"></span>Waiting for preview</div>
+        <input class="input" type="text" data-k="label" placeholder="Display name (optional)" spellcheck="false" style="margin-top:10px">
+      </section>
+      <section class="grp"><h2>Layout</h2>
+        <div class="tiles">${LAYOUTS.map(([v, n, d, svg]) => `<button type="button" class="tile" data-layout="${v}">${svg}<span class="tn">${n}</span><span class="td">${d}</span></button>`).join('')}</div>
+      </section>
+      <section class="grp"><h2>Style</h2>
+        <div class="tiles">${STYLES.map(([v, n, d, prev]) => `<button type="button" class="tile" data-style="${v}">${prev}<span class="tn">${n}</span><span class="td">${d}</span></button>`).join('')}</div>
+        <div class="row" style="margin-top:8px"><span class="lbl">Background</span><div class="seg" id="bgmode">
+          <button type="button" data-bgmode="none">None</button><button type="button" data-bgmode="panel">Panel</button></div></div>
+      </section>
+      <section class="grp"><h2>Show</h2>${show}
+        <div class="sub">Progress</div>
+        <label class="row" data-for="card bar compact"><span class="lbl">Rank goal</span><select class="input" data-k="goal">
+          <option value="">Next division</option>${GOALS.map(g => `<option value="${g}">${g}</option>`).join('')}</select></label>
+        ${range('rotate', 'Rotate info every', 0, 30, 1, 's', 'compact')}
+      </section>
+      <section class="grp"><h2>Size and position</h2>
+        <div class="row"><span class="lbl">Size</span><div class="seg" id="sizes">${SIZES.map(([v, l]) => `<button type="button" data-size="${v}">${l}</button>`).join('')}</div></div>
+        ${range('scale', 'Scale', 50, 250, 5, '%')}
+        ${range('width', 'Width', 260, 520, 10, '', 'card matches')}
+        ${seg('align', 'Align', [['left', 'Left'], ['center', 'Center'], ['right', 'Right']])}
+        ${seg('valign', 'Anchor', [['top', 'Top'], ['bottom', 'Bottom']])}
+      </section>
+      <details class="grp" id="advanced"><summary>Advanced</summary>
+        <label class="row"><span class="lbl">Font</span><select class="input" data-k="font">${FONTS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></label>
+        <div class="sub">Colors</div>
+        <div class="chips" style="margin-bottom:6px">${Object.keys(PALETTES).map(n => `<button type="button" class="chip" data-palette="${n}">${n}</button>`).join('')}</div>
+        ${color('bg', 'Background')}${range('bga', 'Opacity', 0, 100, 1, '%')}
+        ${color('text', 'Text')}${color('muted', 'Muted text', true)}${color('accent', 'Accent', true)}${color('edge', 'Border', true)}
+        ${color('win', 'Win')}${color('loss', 'Loss')}
+        <div class="sub">Panel</div>
+        ${seg('fill', 'Fill', [['solid', 'Solid'], ['gradient', 'Gradient']])}
+        ${seg('texture', 'Texture', [['none', 'None'], ['grid', 'Grid'], ['dots', 'Dots'], ['noise', 'Noise']])}
+        ${range('radius', 'Corners', 0, 20, 1, '')}
+        ${toggle('border', 'Border')}${toggle('shadow', 'Drop shadow')}${toggle('tshadow', 'Text shadow')}
+        ${range('reset', 'New session after', 1, 24, 1, 'h')}
+        ${range('refresh', 'Refresh every', 15, 180, 5, 's')}
+      </details>`;
+
+    const sprite = document.createElement('style');
+    sprite.textContent = `.sp .rk { background-image: url(${SPRITE}); background-repeat: no-repeat; }`;
+    document.head.appendChild(sprite);
+
+    const adv = $('#advanced');
+    adv.open = !!load(STORE + ':advanced');
+    adv.addEventListener('toggle', () => save(STORE + ':advanced', adv.open));
 
     form.addEventListener('input', e => {
       const el = e.target, k = el.dataset.k, hx = el.dataset.hex;
@@ -238,10 +331,24 @@
       }
     });
     form.addEventListener('click', e => {
-      const opt = e.target.closest('[data-v]');
-      if (opt) { S[opt.parentNode.dataset.k] = opt.dataset.v; changed(0); }
-      const pre = e.target.closest('[data-preset]');
-      if (pre) { Object.assign(S, PRESETS[pre.dataset.preset]); changed(0); }
+      const t = e.target.closest('[data-v], [data-chip], [data-layout], [data-style], [data-bgmode], [data-size], [data-auto], [data-palette]');
+      if (!t) return;
+      if (t.dataset.size) S.scale = Number(t.dataset.size);
+      else if (t.dataset.auto) S[t.dataset.auto] = '';
+      else if (t.dataset.palette) {
+        const th = THEMES[S.style];
+        Object.assign(S, { bg: th.bg, text: th.text, win: th.win, loss: th.loss, accent: '', muted: '', edge: '' }, PALETTES[t.dataset.palette] || {});
+      }
+      else if (t.dataset.v) S[t.parentNode.dataset.k] = t.dataset.v;
+      else if (t.dataset.chip) S[t.dataset.chip] = !S[t.dataset.chip];
+      else if (t.dataset.layout) {
+        S.layout = t.dataset.layout;
+        if (S.layout === 'matches' && !S.matches) S.matches = 5;
+      }
+      else if (t.dataset.style) Object.assign(S, THEMES[t.dataset.style], { style: t.dataset.style });
+      else if (t.dataset.bgmode === 'none') Object.assign(S, { bga: 0, tshadow: true });
+      else if (t.dataset.bgmode === 'panel') Object.assign(S, { bga: THEMES[S.style].bga || 88, tshadow: S.style === 'tooltip' });
+      changed(0);
     });
   }
 
@@ -251,16 +358,18 @@
       const k = el.dataset.k, v = S[k];
       if (el.classList.contains('seg')) el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
       else if (el.type === 'checkbox') el.checked = !!v;
-      else if (el.type === 'color') el.value = '#' + hex6(v);
+      else if (el.type === 'color') el.value = v ? '#' + hex6(v) : '#808080';
       else if (el !== focused) el.value = v;
     });
-    form.querySelectorAll('[data-hex]').forEach(el => { if (el !== focused) el.value = '#' + hex6(S[el.dataset.hex]); });
-    form.querySelectorAll('[data-out]').forEach(el => { el.textContent = S[el.dataset.out] + el.dataset.unit; });
-    form.querySelectorAll('[data-only]').forEach(el => el.classList.toggle('hide', el.dataset.only !== S.layout));
-    form.querySelectorAll('[data-preset]').forEach(b => {
-      const p = PRESETS[b.dataset.preset];
-      b.classList.toggle('on', Object.keys(p).every(k => String(S[k]).toLowerCase() === String(p[k]).toLowerCase()));
-    });
+    form.querySelectorAll('[data-hex]').forEach(el => { if (el !== focused) el.value = S[el.dataset.hex] ? '#' + hex6(S[el.dataset.hex]) : ''; });
+    form.querySelectorAll('[data-auto]').forEach(b => b.classList.toggle('on', !S[b.dataset.auto]));
+    form.querySelectorAll('[data-size]').forEach(b => b.classList.toggle('on', Number(b.dataset.size) === S.scale));
+    form.querySelectorAll('[data-out]').forEach(el => { const v = S[el.dataset.out]; el.textContent = el.dataset.out === 'rotate' && !v ? 'Off' : v + el.dataset.unit; });
+    form.querySelectorAll('[data-chip]').forEach(b => b.classList.toggle('on', !!S[b.dataset.chip]));
+    form.querySelectorAll('[data-layout]').forEach(b => b.classList.toggle('on', b.dataset.layout === S.layout));
+    form.querySelectorAll('[data-for]').forEach(el => el.classList.toggle('hide', !el.dataset.for.split(' ').includes(S.layout)));
+    form.querySelectorAll('[data-style]').forEach(b => b.classList.toggle('on', b.dataset.style === S.style));
+    form.querySelectorAll('[data-bgmode]').forEach(b => b.classList.toggle('on', b.dataset.bgmode === (S.bga === 0 ? 'none' : 'panel')));
     $('#every').textContent = S.refresh + 's';
   }
 
@@ -277,7 +386,7 @@
     const p = new URLSearchParams();
     p.set('u', S.u || 'YourName');
     for (const k in DEFAULTS) {
-      if (k === 'u' || S[k] === DEFAULTS[k]) continue;
+      if (k === 'u' || S[k] === fallback(k)) continue;
       p.set(k, typeof S[k] === 'boolean' ? (S[k] ? 1 : 0) : S[k]);
     }
     return new URL('overlay.html', location.href).href + '?' + p.toString();
@@ -312,6 +421,8 @@
     if (d.type === 'mcsr:ready') {
       if (!DEFAULTS) {
         DEFAULTS = d.defaults;
+        THEMES = d.themes;
+        SPRITE = d.sprite;
         const saved = load(STORE) || { u: 'orq2' };
         S = Object.assign({}, DEFAULTS);
         for (const k in DEFAULTS) if (saved[k] !== undefined && typeof saved[k] === typeof DEFAULTS[k]) S[k] = saved[k];
