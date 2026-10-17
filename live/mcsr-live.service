@@ -1,0 +1,13 @@
+# systemd user unit (Linux). Fix the path, then:
+#   cp live/mcsr-live.service ~/.config/systemd/user/
+#   systemctl --user enable --now mcsr-live
+[Unit]
+Description=mcsr-live: MCSR HUD and live run data for OBS
+
+[Service]
+ExecStart=/usr/bin/python3 %h/Documents/Claude/mcsr-overlay/live/mcsr-live.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

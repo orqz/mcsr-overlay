@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCSR HUD</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
+<style>
+  @property --ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+  :root {
+    --s: 1; --bga: .84;
+    --bg: rgba(11, 13, 17, var(--bga));
+    --line: rgba(255, 255, 255, .075);
+    --text: #eef1f5; --muted: rgba(238, 241, 245, .55); --faint: rgba(238, 241, 245, .28);
+    --accent: #4fe3ff;
+    --win: #4ade80; --loss: #f87171;
+    /* pace verdicts */
+    --best: #ffc94d; --great: #34e39a; --good: #9be36b; --okay: #b7c2d6; --slow: #ff9a4d;
+    --tier: #aaaaaa;
+  }
+  html { font-size: calc(16px * var(--s)); }
+  html, body { margin: 0; background: transparent; }
+  * { box-sizing: border-box; }
+  body {
+    padding: .75rem; overflow: hidden;
+    font: 500 .8125rem/1.2 'Geist', system-ui, sans-serif; color: var(--text);
+    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  }
+
+  .hud { display: inline-flex; flex-direction: column; align-items: flex-start; gap: .4375rem; animation: hudIn .7s cubic-bezier(.2, .9, .25, 1) both; }
+  @keyframes hudIn { from { opacity: 0; transform: translateY(-.375rem) scale(.98); } }
+
+  /* ---------- the pill ---------- */
+  .pill { position: relative; border-radius: .875rem; background: var(--bg);
+    box-shadow: inset 0 0 0 1px var(--line), 0 .5rem 1.5rem rgba(0, 0, 0, .3); padding: .4375rem .875rem .4375rem .5rem; }
+  /* PB pace: a slow gold light that runs around the edge */
+  .pill::before { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none;
+    background: conic-gradient(from var(--ang), transparent 0 62%, rgba(255, 201, 77, .15) 72%, var(--best) 86%, transparent 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+    opacity: 0; transition: opacity .8s; }
+  .hud.pbpace .pill::before { opacity: 1; animation: spin 3.2s linear infinite; }
+  @keyframes spin { to { --ang: 360deg; } }
+  .pill.flash { animation: flash 1.4s ease-out; }
+  @keyframes flash {
+    0%   { box-shadow: inset 0 0 0 1px var(--vc), 0 0 0 0 transparent; }
+    25%  { box-shadow: inset 0 0 0 1px var(--vc), 0 0 1.5rem .125rem color-mix(in srgb, var(--vc) 40%, transparent); }
+    100% { box-shadow: inset 0 0 0 1px var(--line), 0 .5rem 1.5rem rgba(0, 0, 0, .3); }
+  }
+
+  .top { display: flex; align-items: center; height: 2.125rem; white-space: nowrap; }
+  .grp { display: flex; align-items: center; }
+  .grp[hidden] { display: none; }
+  .vr { width: 1px; height: 1.375rem; margin: 0 .75rem; background: var(--line); }
+
+  .rk { width: 1.75rem; height: 1.75rem; flex: none; margin-right: .5rem; image-rendering: pixelated;
+    background: no-repeat; background-size: 10.5rem 5.25rem; filter: drop-shadow(0 0 .375rem color-mix(in srgb, var(--tier) 35%, transparent)); }
+  .rk.bump { animation: bump .7s cubic-bezier(.3, 1.6, .5, 1); }
+  @keyframes bump { 40% { transform: scale(1.25) rotate(-6deg); } }
+
+  .elo { position: relative; display: flex; flex-direction: column; line-height: 1; }
+  .elo b { font-size: 1.3125rem; font-weight: 650; letter-spacing: -.025em; }
+  .elo b.up { color: var(--win); transition: color 2s; } .elo b.down { color: var(--loss); transition: color 2s; }
+  .tier { margin-top: .25rem; font-size: .5625rem; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; color: var(--tier); }
+  .tbar { display: block; height: 2px; margin-top: .1875rem; border-radius: 1px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+  .tbar i { display: block; height: 100%; width: 0; background: var(--tier); transition: width 1.2s cubic-bezier(.2, .8, .2, 1); }
+  .float { position: absolute; left: 100%; top: -.125rem; margin-left: .25rem; font-size: .6875rem; font-weight: 700; pointer-events: none; animation: floatUp 2.2s ease-out forwards; }
+  @keyframes floatUp { 0% { opacity: 0; transform: translateY(.375rem); } 15% { opacity: 1; transform: none; } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-.625rem); } }
+
+  .kv { display: flex; flex-direction: column; line-height: 1; }
+  .kv b { font-size: .9375rem; font-weight: 600; letter-spacing: -.01em; }
+  .kv small { margin-top: .3125rem; font-size: .5625rem; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .pos { color: var(--win); } .neg { color: var(--loss); } .zero { color: var(--muted); }
+  /* while you're on PB pace the PB slot shows how far ahead you are */
+  #pbk.pace b, #pbk.pace small { color: var(--best); }
+  #pbk.pace b { text-shadow: 0 0 .75rem rgba(255, 201, 77, .45); }
+  #pbk.swap { animation: chipIn .5s cubic-bezier(.3, 1.5, .5, 1); }
+
+  .form { display: flex; gap: .1875rem; }
+  .sq { display: grid; place-items: center; width: 1rem; height: 1rem; border-radius: .25rem; font-size: .5625rem; font-weight: 700; }
+  .sq.win  { color: var(--win);  background: rgba(74, 222, 128, .14);  box-shadow: inset 0 0 0 1px rgba(74, 222, 128, .28); }
+  .sq.loss { color: var(--loss); background: rgba(248, 113, 113, .14); box-shadow: inset 0 0 0 1px rgba(248, 113, 113, .28); }
+  .sq.draw { color: var(--muted); background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); }
+  .sq.ff { opacity: .55; }
+  .sq.new { animation: sqIn .6s cubic-bezier(.3, 1.5, .5, 1); }
+  @keyframes sqIn { from { transform: scale(0) rotate(-30deg); } }
+
+  .msg { font-size: .75rem; color: var(--muted); padding: 0 .25rem; }
+  .msg b { color: var(--text); font-weight: 600; }
+
+  /* ---------- live run row: opens under the stats while you're in a world ---------- */
+  .lw { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .55s cubic-bezier(.2, .8, .2, 1); }
+  .hud.live .lw { grid-template-rows: 1fr; }
+  .live { min-height: 0; overflow: hidden; }
+  .in { display: flex; align-items: center; gap: .75rem; margin-top: .4375rem; padding: .4375rem 0 .0625rem .25rem; border-top: 1px solid var(--line);
+    opacity: 0; transform: translateY(-.25rem); transition: opacity .35s, transform .35s; white-space: nowrap; }
+  .hud.live .in { opacity: 1; transform: none; transition-delay: .12s; }
+
+  .phase { display: flex; align-items: baseline; gap: .375rem; min-width: 7.25rem; }
+  .phase .nm { font-size: .5625rem; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .phase .t { font-size: .875rem; font-weight: 600; }
+  .phase .hint { font-size: .6875rem; color: var(--faint); }
+  .chip { display: inline-block; padding: .125rem .3125rem; border-radius: .3125rem; font-size: .625rem; font-weight: 700;
+    color: var(--vc); background: color-mix(in srgb, var(--vc) 15%, transparent); }
+  .phase .chip.swap { animation: chipIn .45s cubic-bezier(.3, 1.5, .5, 1); }
+  @keyframes chipIn { from { opacity: 0; transform: translateY(.25rem) scale(.85); } }
+
+  .track { display: flex; align-items: center; flex: 1 0 9rem; }
+  .seg { flex: 1; height: 2px; margin: 0 .1875rem; border-radius: 1px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+  .seg i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, rgba(79, 227, 255, .25), var(--accent)); transition: width .3s linear; }
+  .seg.done i { width: 100%; background: rgba(255, 255, 255, .32); transition: none; }
+  .seg.late i { background: linear-gradient(90deg, rgba(255, 154, 77, .25), var(--slow)); }
+  .node { position: relative; flex: none; width: .5rem; height: .5rem; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .2); transition: background .3s, box-shadow .3s; }
+  .node.fin { border-radius: 1px; transform: rotate(45deg); }
+  .node.hit { background: var(--vc); box-shadow: 0 0 .5rem color-mix(in srgb, var(--vc) 70%, transparent); }
+  .node.next { box-shadow: inset 0 0 0 1.5px var(--accent); animation: breathe 2.4s ease-in-out infinite; }
+  .node.next.late { box-shadow: inset 0 0 0 1.5px var(--slow); }
+  @keyframes breathe { 50% { box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 .5rem rgba(79, 227, 255, .5); } }
+  .node.next.late { animation: none; }
+  .node.pop { animation: pop .65s cubic-bezier(.3, 1.7, .5, 1); }
+  .node.fin.pop { animation: popFin .65s cubic-bezier(.3, 1.7, .5, 1); }
+  @keyframes pop { 0% { transform: scale(.2); } }
+  @keyframes popFin { 0% { transform: rotate(45deg) scale(.2); } }
+  .node.pop::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 1.5px var(--vc); animation: ring .9s ease-out forwards; }
+  @keyframes ring { to { transform: scale(3.2); opacity: 0; } }
+
+
+  /* ---------- callouts: splits, PB pace, match results ---------- */
+  .cos { display: flex; flex-direction: column; align-items: flex-start; }
+  .co { position: relative; display: flex; align-items: center; gap: .75rem; padding: .4375rem .875rem .4375rem .625rem; border-radius: .75rem; background: var(--bg);
+    box-shadow: inset 0 0 0 1px var(--line), 0 .5rem 1.5rem rgba(0, 0, 0, .3); white-space: nowrap; animation: coIn .6s cubic-bezier(.2, .9, .25, 1) both; }
+  .co.out { animation: coOut .4s ease-in both; }
+  /* ends with a negative inset so sparkles can fly past the edge */
+  @keyframes coIn { from { opacity: 0; transform: translateY(-.5rem); clip-path: inset(-4rem 100% -4rem -4rem); } to { clip-path: inset(-4rem -4rem -4rem -4rem); } }
+  @keyframes coOut { to { opacity: 0; transform: translateY(-.375rem) scale(.97); } }
+  .co .bar { align-self: stretch; width: 3px; border-radius: 2px; background: var(--vc); box-shadow: 0 0 .625rem var(--vc); animation: barIn .5s .15s cubic-bezier(.2, .9, .25, 1) both; }
+  @keyframes barIn { from { transform: scaleY(0); } }
+  .co .k { font-size: .5625rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--vc); }
+  .co .v { margin-top: .1875rem; font-size: 1rem; font-weight: 500; }
+  .co .v b { font-weight: 650; }
+  .co .v small { margin-left: .375rem; font-size: .75rem; font-weight: 500; color: var(--muted); }
+  .co .k, .co .v { animation: txtIn .5s .2s both; }
+  .co .v { animation-delay: .28s; }
+  @keyframes txtIn { from { opacity: 0; transform: translateX(-.375rem); } }
+  .co .pbc { padding: .1875rem .4375rem; border-radius: 99px; font-size: .5625rem; font-weight: 700; letter-spacing: .08em;
+    color: var(--best); background: rgba(255, 201, 77, .12); box-shadow: inset 0 0 0 1px rgba(255, 201, 77, .35);
+    animation: chipIn .5s .45s cubic-bezier(.3, 1.5, .5, 1) both; }
+  .co .pbc b { margin-left: .25rem; font-weight: 700; letter-spacing: 0; }
+  .co.gold { background: linear-gradient(100deg, rgba(255, 201, 77, .16), transparent 55%), var(--bg); }
+  .co .shine { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; }
+  .co .shine::after { content: ''; position: absolute; top: 0; bottom: 0; width: 40%; left: -40%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .14), transparent); animation: sweep 1.6s .5s ease-in-out 2; }
+  @keyframes sweep { to { left: 120%; } }
+  .spark { position: absolute; width: .3125rem; height: .3125rem; background: var(--best); border-radius: 1px; pointer-events: none;
+    animation: spark 1.2s cubic-bezier(.15, .7, .3, 1) forwards; }
+  @keyframes spark { from { opacity: 1; transform: translate(0, 0) rotate(45deg) scale(1.2); } to { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(225deg) scale(.2); } }
+</style>
+</head>
+<body>
+<div class="hud" id="hud">
+  <div class="pill" id="pill">
+    <div class="top" id="top">
+      <span class="rk" id="rk"></span>
+      <div class="elo"><b id="elo">—</b><span class="tier" id="tier">Loading</span><span class="tbar"><i id="tbar"></i></span></div>
+      <div class="grp" id="g-sess" hidden><span class="vr"></span><div class="kv"><b id="sessv"></b><small id="sessl"></small></div></div>
+      <div class="grp" id="g-pb" hidden><span class="vr"></span><div class="kv" id="pbk"><b id="pbv"></b><small id="pbl">PB</small></div></div>
+      <div class="grp" id="g-form" hidden><span class="vr"></span><div class="form" id="form"></div></div>
+    </div>
+    <div class="lw"><div class="live"><div class="in">
+      <div class="phase"><span class="nm" id="ph"></span><b class="t" id="pht"></b><span id="phx"></span></div>
+      <div class="track" id="track"></div>
+    </div></div></div>
+  </div>
+  <div class="cos" id="cos"></div>
+</div>
+<script>
+(() => {
+  'use strict';
+
+  // ?u=name  &scale=1.4  &bga=84 (panel opacity %)  &demo (fake run, to preview)  &live=0 (stats only)
+  const API = 'https://api.mcsrranked.com';
+  const P = new URLSearchParams(location.search + '&' + location.hash.slice(1));
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+  const local = /^(127\.0\.0\.1|localhost|\[::1\])$/.test(location.hostname);
+  const cfg = {
+    u: (P.get('u') || P.get('user') || '').trim(),
+    scale: clamp(parseFloat(P.get('scale')) || 1, .5, 4),
+    bga: P.has('bga') ? clamp(parseFloat(P.get('bga')) || 0, 0, 100) / 100 : .84,
+    live: P.get('live') || (local ? '/api/live' : 'http://127.0.0.1:7477/api/live'),
+    demo: P.has('demo') ? (parseFloat(P.get('demo')) || 20) : 0,
+    refresh: Math.max(15, parseFloat(P.get('refresh')) || 30),
+    reset: parseFloat(P.get('reset')) || 4, // hours without a match before the session restarts
+  };
+  document.documentElement.style.setProperty('--s', cfg.scale);
+  document.documentElement.style.setProperty('--bga', cfg.bga);
+
+  // Order on the track. Bastion and fortress can swap; each is judged on its own.
+  const SPLITS = ['nether', 'bastion', 'fortress', 'blind', 'stronghold', 'end', 'finish'];
+  const NAMES = { '': 'Overworld', nether: 'Nether', bastion: 'Bastion', fortress: 'Fortress', blind: 'Blind', stronghold: 'Stronghold', end: 'The End', finish: 'Finished' };
+  const SHORT = { nether: 'nether', bastion: 'bastion', fortress: 'fortress', blind: 'blind', stronghold: 'stronghold', end: 'end' };
+  const VERDICTS = {
+    pb:    ['New PB', 'var(--best)'],
+    best:  ['Best ever', 'var(--best)'],
+    great: ['Great pace', 'var(--great)'],
+    good:  ['Good pace', 'var(--good)'],
+    okay:  ['Okay pace', 'var(--okay)'],
+    slow:  ['Slow pace', 'var(--slow)'],
+    none:  ['Split', 'var(--accent)'],
+  };
+
+  // MCSR Ranked's divisions, tier colors and badge sprite (6×3 icons)
+  const DIVS = [
+    [0, 'Coal I'], [400, 'Coal II'], [500, 'Coal III'], [600, 'Iron I'], [700, 'Iron II'], [800, 'Iron III'],
+    [900, 'Gold I'], [1000, 'Gold II'], [1100, 'Gold III'], [1200, 'Emerald I'], [1300, 'Emerald II'], [1400, 'Emerald III'],
+    [1500, 'Diamond I'], [1650, 'Diamond II'], [1800, 'Diamond III'], [2000, 'Netherite'],
+  ];
+  const TIER_COLORS = { Coal: '#aaaaaa', Iron: '#ffffff', Gold: '#eab308', Emerald: '#21a83b', Diamond: '#2ce0d8', Netherite: '#d066ff', Unrated: '#8b8f98' };
+  const SPRITE_ROWS = [
+    ['Coal I', 'Coal II', 'Coal III', 'Iron I', 'Iron II', 'Iron III'],
+    ['Gold I', 'Gold II', 'Gold III', 'Emerald I', 'Emerald II', 'Emerald III'],
+    ['Diamond I', 'Diamond II', 'Diamond III', 'Netherite', 'Unrated'],
+  ];
+  const SPRITE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFoAAAAtCAMAAAAZUYxJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAACxUExURZuwsqjEtiQuNYCPmS0/Pll3bmdyf4CZkhsZK9zq5cfYyhMhHUdMWf///zhBSQ8EFPrqLs332rJkEffEMQ1mPpDbr+KRBG3bg//3nf/6rVnWVQg/PHYzDPTGPR+oOwp/VErt2U8ocgpbYCDFtahkvDQaUQAAANX/9hiblxgNKy0bSRYWFqH76Nt/0IhOoz09PSzg2AoADx0JOg5HPlU3d0YpdSYmJhuJkfeq4jUlTwAAAOYMmYwAAAA7dFJOU/////////////////////////////////////////////////////////////////////////////8AocQ7HgAAAAlwSFlzAAAOwwAADsMBx2+oZAAAABl0RVh0U29mdHdhcmUAUGFpbnQuTkVUIDUuMS4xMYoIFs4AAAO7SURBVFhHpZQNU+JIEIYlhOCtxoV8EJf1MBA+BRR3Fffy/3/YvdPTM+lOpTiq7q3Cmcein2qaDjf1NbnuXZwen64o4JOjsR/0+WYT8snROAgH9nKVOgoivlHCgZJpHAKHdGN1ECmZRpiVOxxKVw/oZoA06NQ30tUHihG0MBz0RJ/oEmj7RARadRD1o1u6mfQJvayF4eCvb73BHRMmS8jzlcjqfnTfqCNCPwKN4fBbjOqhdQ89UqMKSR3cR/fBg3PfMPKsWhj2UDt0bfc80nwV2oLbh8aMNgmbrhWGgyFqh6Hr2iF3LZDVwUMgZk3YzFojqr2ZhkvYzNojf8zvwXd7ofSBYiVaeIf1cmY0Skg9mwh06lupbmEElHt95/fDpAeUe+2R1bUytzFSZrQt1S1E2/wZrlL35TwQZW6j33Gnvpzr3sVx07muaMTnVRnz6dQJnxyNaZLyzSbjk6Mxz3J7YXWSKpnGCXDCd5OskLICWPAdadCpR9KVAkWfCrOsznK82H4BrTp5/CHcI0I/X43ZNIvzIpv+/E8ktalNJ0/miqSMttGJR55JFo+LacGqwiMNQSHUSZL+iB9HafJEco2pwL/Bmakdz1BNco25wBzqZJQ+jlA7SScJZBoxCIEj01RejMf583Q6g0zjWOGYuh6lqE0mrmuJ6Nqj7Xo2Hef588x1LRFdezRdI4npybRMwaYR+lkzulnPnk2tBQyX0c26QbshT9hcZ8ZKEDYbohDf/gy1zn0Brbp+8vthkgLlXkvMftam0s7jIjq1aBrROAHKp9H3SCmA9vGjNMjqWpnbmMrPgEgzojHHN0hx6sv5X798l1PyyZnzeTlOveCTo7FaVHyr6+W8nq/wWjIjaz5bYfViI2Vb4JbviEQyL3cvwr3ed7utehEf4sZdEfohSLTm46twr/dv3W5So7Y8+b5LRh6CQms+Ll/ff/HE1/s4jjvdRm262mwO29/0n61HGkIL56vXI9wfn3CbwPx2fut0Q72Iy83hUFblF7k1Yhoe0ffL7sOYl5+rHbnX+/PbeX+Ozx3um3px2Jwq1G6rk5FpLBWWL7vV5+vxz/HP6oPc1ryO6S8bfUzXqN5ut6dTZbtWWAmkruFeHlcf/4iuu8121gf0VH5ZM4brkGetkNzezO5OM6nrxdeprOykkYqRt0/hvH5537HZbUj3pFld/64aM9aN0D+AErHXv9531nzVXsMtzBgC0D1+iETrFmbj7jQ7dS3NiEb6Bjnklma4+WzFqS+n9ctnv8HLqet/AeFM0AfYldt3AAAAAElFTkSuQmCC';
+
+  // ---------- helpers ----------
+  const $ = id => document.getElementById(id);
+  const hud = $('hud');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  const pad = n => String(n).padStart(2, '0');
+  function fmt(ms) {
+    if (ms == null) return '—';
+    const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
+    return h ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
+  }
+  const fmtD = ms => (ms < 0 ? '−' : '+') + fmt(Math.abs(ms));
+  const signed = n => n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '±0';
+  const signCls = n => !n ? 'zero' : n > 0 ? 'pos' : 'neg';
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  };
+
+  function tierOf(elo) {
+    if (elo == null) return { name: 'Unrated', color: TIER_COLORS.Unrated, pct: 0 };
+    let i = 0;
+    while (i + 1 < DIVS.length && elo >= DIVS[i + 1][0]) i++;
+    const [lo, name] = DIVS[i], nx = DIVS[i + 1];
+    return { name, color: TIER_COLORS[name.split(' ')[0]], pct: nx ? (elo - lo) / (nx[0] - lo) : 1 };
+  }
+
+  // ---------- ranked profile ----------
+  const S = {
+    user: null, matches: null, key: null, primed: false, err: null, timer: null, polling: false, soon: null,
+    shownElo: null, shownTier: null, newestId: null, pbTime: null,
+    live: null, world: null, judged: {}, livePrimed: false, announced: null, pb: null, linger: 0, liveTimer: null,
+    q: [], showing: false,
+  };
+
+  async function api(path) {
+    const sep = path.includes('?') ? '&' : '?';
+    const res = await fetch(`${API}${path}${sep}_=${Date.now()}`, { cache: 'no-store' });
+    let body = null;
+    try { body = await res.json(); } catch (e) {}
+    if (!res.ok || !body || body.status !== 'success') {
+      const err = new Error((body && body.data && body.data.error) || `HTTP ${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
+    return body.data;
+  }
+
+  function parseMatch(m, uuid) {
+    const opp = (m.players || []).find(p => p.uuid !== uuid) || {};
+    const ch = (m.changes || []).find(x => x.uuid === uuid);
+    const winner = m.result && m.result.uuid;
+    return {
+      id: m.id, date: m.date, res: !winner ? 'draw' : winner === uuid ? 'win' : 'loss',
+      opp: opp.nickname || 'Unknown', oppElo: opp.eloRate, time: m.result ? m.result.time : null,
+      ff: !!m.forfeited, change: ch ? ch.change : null,
+    };
+  }
+
+  // A session starts when the HUD first loads and ends after `reset` hours without a ranked match.
+  function sessionOf() {
+    const now = Date.now() / 1000, list0 = S.matches || [];
+    const k = 'mcsr-hud:session:' + S.user.uuid;
+    let s = store.get(k);
+    if (!s || !s.start || now - Math.max(s.start, list0[0] ? list0[0].date : 0) > cfg.reset * 3600) store.set(k, s = { start: now });
+    const list = list0.filter(m => m.date >= s.start);
+    const n = r => list.filter(m => m.res === r).length;
+    return { n: list.length, elo: list.reduce((a, m) => a + (m.change || 0), 0), w: n('win'), l: n('loss') };
+  }
+
+  async function poll() {
+    clearTimeout(S.timer);
+    if (!cfg.u) return renderTop();
+    S.polling = true;
+    let delay = cfg.refresh * 1000;
+    try {
+      const user = await api('/users/' + encodeURIComponent(cfg.u));
+      const played = (((user.statistics || {}).total || {}).playedMatches || {}).ranked;
+      const key = [user.uuid, (user.timestamp || {}).lastRanked, played].join(':');
+      if (key !== S.key) {
+        const list = await api(`/users/${user.uuid}/matches?type=2&count=30`);
+        const parsed = list.filter(m => !m.decayed).map(m => parseMatch(m, user.uuid));
+        const prevTop = S.matches && S.matches[0] ? S.matches[0].id : null;
+        if (S.primed && parsed[0] && parsed[0].id !== prevTop) matchCallout(parsed[0], user.eloRate);
+        S.matches = parsed;
+        S.key = key;
+        S.primed = true;
+      }
+      S.user = user;
+      S.err = null;
+    } catch (e) {
+      S.err = e;
+      if (e.status === 400) S.user = null;
+      delay = e.status === 429 ? Math.max(delay, 120000) : S.user ? delay : 15000;
+    }
+    S.polling = false;
+    renderTop();
+    if (S.soon != null) { delay = Math.min(delay, S.soon); S.soon = null; }
+    S.timer = setTimeout(poll, delay);
+  }
+  // After a run, ask for the new elo sooner than the usual refresh.
+  function pollSoon(ms) {
+    if (cfg.demo) return;
+    if (S.polling) { S.soon = ms; return; }
+    clearTimeout(S.timer);
+    S.timer = setTimeout(poll, ms);
+  }
+
+  function renderTop() {
+    const u = S.user;
+    const top = $('top');
+    if (!u) {
+      const msg = !cfg.u ? 'Add <b>?u=YourName</b> to the URL'
+        : S.err && S.err.status === 400 ? `No ranked profile for <b>${esc(cfg.u)}</b>`
+        : S.err ? 'Can’t reach MCSR Ranked, retrying' : `Loading <b>${esc(cfg.u)}</b>…`;
+      if (!top.querySelector('.msg')) top.insertAdjacentHTML('beforeend', '<span class="msg"></span>');
+      top.querySelector('.msg').innerHTML = msg;
+      $('elo').parentNode.hidden = true;
+      return;
+    }
+    const m = top.querySelector('.msg');
+    if (m) m.remove();
+    $('elo').parentNode.hidden = false;
+
+    const t = tierOf(u.eloRate);
+    hud.style.setProperty('--tier', t.color);
+    let row = SPRITE_ROWS.findIndex(r => r.includes(t.name));
+    if (row < 0) row = 2;
+    const col = Math.max(0, SPRITE_ROWS[row].indexOf(t.name));
+    const rk = $('rk');
+    rk.style.backgroundImage = `url(${SPRITE})`;
+    rk.style.backgroundPosition = `${-col * 1.75}rem ${-row * 1.75}rem`;
+    if (S.shownTier && S.shownTier !== t.name) { rk.classList.remove('bump'); void rk.offsetWidth; rk.classList.add('bump'); }
+    S.shownTier = t.name;
+    $('tier').textContent = t.name;
+    $('tbar').style.width = Math.round(t.pct * 100) + '%';
+
+    const elo = $('elo');
+    if (u.eloRate == null) elo.textContent = '—';
+    else if (S.shownElo != null && S.shownElo !== u.eloRate) eloChange(S.shownElo, u.eloRate);
+    else if (S.shownElo == null) elo.textContent = u.eloRate;
+    S.shownElo = u.eloRate;
+
+    const ses = sessionOf();
+    $('g-sess').hidden = !ses.n;
+    if (ses.n) {
+      $('sessv').textContent = signed(ses.elo);
+      $('sessv').className = signCls(ses.elo);
+      $('sessl').textContent = `${ses.w}W ${ses.l}L`;
+    }
+
+    const season = (u.statistics || {}).season || {};
+    S.pbTime = season.bestTime && season.bestTime.ranked;
+    paintPB(hud.classList.contains('pbpace'));
+
+    const last = (S.matches || []).slice(0, 5).reverse();
+    $('g-form').hidden = !last.length;
+    const newest = last.length ? last[last.length - 1].id : null;
+    const animate = S.newestId != null && newest !== S.newestId;
+    $('form').innerHTML = last.map((x, i) => {
+      const cls = [x.res, x.ff && 'ff', animate && i === last.length - 1 && 'new'].filter(Boolean).join(' ');
+      return `<span class="sq ${cls}">${x.res === 'win' ? 'W' : x.res === 'loss' ? 'L' : 'D'}</span>`;
+    }).join('');
+    S.newestId = newest;
+  }
+
+  function paintPB(pace) {
+    pace = pace && !!S.pb;
+    const k = $('pbk'), mode = pace ? 'pace' : 'pb';
+    $('g-pb').hidden = !pace && !S.pbTime;
+    if (k.dataset.mode && k.dataset.mode !== mode) { k.classList.remove('swap'); void k.offsetWidth; k.classList.add('swap'); }
+    k.dataset.mode = mode;
+    k.classList.toggle('pace', pace);
+    $('pbv').textContent = pace ? fmtD(S.pb.d) : fmt(S.pbTime);
+    $('pbl').textContent = pace ? 'PB pace' : 'PB';
+  }
+
+  function eloChange(from, to) {
+    const el = $('elo'), d = to - from;
+    el.className = d > 0 ? 'up' : 'down';
+    const t0 = performance.now(), dur = 1400;
+    const step = t => {
+      const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(from + d * e);
+      if (p < 1) requestAnimationFrame(step);
+      else setTimeout(() => { el.className = ''; }, 1500);
+    };
+    requestAnimationFrame(step);
+    const f = document.createElement('span');
+    f.className = 'float ' + signCls(d);
+    f.textContent = signed(d);
+    el.parentNode.appendChild(f);
+    setTimeout(() => f.remove(), 2300);
+  }
+
+  // ---------- live run (from live/mcsr-live.py) ----------
+  function judge(key, t, ref) {
+    const r = ref && ref.splits && ref.splits[key];
+    const pbRun = ref && ref.pb;
+    const j = { key, t, avg: r ? r.median : null, best: r ? r.best : null, pb: pbRun ? pbRun.splits[key] : null };
+    if (key === 'finish' && (!pbRun || t < pbRun.time)) j.v = 'pb';
+    else if (!r || r.n < 3) j.v = 'none';
+    else if (t < r.best) j.v = 'best';
+    else {
+      // how many of your runs were slower; the side of the average decides good vs okay
+      const slower = r.times.filter(x => x > t).length / r.n;
+      j.v = t <= r.median ? (slower >= .75 ? 'great' : 'good') : (slower >= .25 ? 'okay' : 'slow');
+    }
+    return j;
+  }
+
+  function onLive(d) {
+    if (!d || !d.ok) return;
+    const wasLive = !!(S.live && S.live.live);
+    const splits = d.splits || {};
+    if (d.world !== S.world) {
+      // a new world: splits already in it (HUD reloaded mid-run) are judged quietly
+      S.world = d.world;
+      S.judged = {};
+      S.pb = null;
+      for (const k of SPLITS) if (splits[k] != null) S.judged[k] = judge(k, splits[k], d.ref);
+    } else {
+      for (const k of SPLITS) {
+        if (splits[k] == null || S.judged[k]) continue;
+        const j = S.judged[k] = judge(k, splits[k], d.ref);
+        onSplit(j, d.ref);
+      }
+    }
+    // who you're playing, once, when the run starts (not when the HUD reloads mid-run)
+    if (d.live && S.announced !== d.world) {
+      S.announced = d.world;
+      if (S.livePrimed && d.match && d.match.opponent) {
+        callout({ vc: 'var(--accent)', k: d.match.type === 'RANKED' ? 'Ranked match' : 'Match',
+          v: `vs <b>${esc(d.match.opponent)}</b>${d.match.opponentElo != null ? `<small>${d.match.opponentElo} elo</small>` : ''}` });
+      }
+    }
+    S.livePrimed = true;
+    if (wasLive && !d.live) {
+      S.linger = Date.now() + (splits.finish != null ? 9000 : 2500);
+      pollSoon(4000);
+      setTimeout(() => pollSoon(1000), 15000);
+    }
+    S.live = d;
+    renderLive();
+  }
+
+  function onSplit(j, ref) {
+    const [word, vc] = VERDICTS[j.v];
+    const pbRun = ref && ref.pb;
+    if (j.key !== 'finish' && pbRun && j.pb != null) S.pb = j.t <= j.pb ? { d: j.t - j.pb } : null;
+    if (j.key === 'finish') S.pb = null;
+
+    const pill = $('pill');
+    pill.style.setProperty('--vc', vc);
+    pill.classList.remove('flash'); void pill.offsetWidth; pill.classList.add('flash');
+    S.popKey = j.key;
+
+    let k = word, v, sub = '';
+    if (j.key === 'finish') {
+      v = `Finished <b>${fmt(j.t)}</b>`;
+      if (pbRun) sub = `${fmtD(j.t - pbRun.time)} vs PB`;
+      else k = 'First finish';
+    } else {
+      v = `${NAMES[j.key]} <b>${fmt(j.t)}</b>`;
+      if (j.v === 'best') { k = `Best ${SHORT[j.key]} ever`; sub = `${fmtD(j.t - j.best)} vs old best`; }
+      else if (j.avg != null) sub = `${fmtD(j.t - j.avg)} vs avg`;
+    }
+    const gold = j.v === 'pb' || j.v === 'best';
+    callout({ vc, k, v: v + (sub ? `<small>${sub}</small>` : ''), gold,
+      pb: S.pb ? fmtD(S.pb.d) : null, dur: gold ? 7000 : 5500 });
+  }
+
+  function elapsed() {
+    if (cfg.demo) return demo.game();
+    const d = S.live;
+    return d && d.clockStart ? Date.now() - d.clockStart : null;
+  }
+
+  function renderLive() {
+    const d = S.live;
+    const on = !!(d && d.live) || Date.now() < S.linger;
+    hud.classList.toggle('live', on);
+    if (!d) return;
+
+    // how far along you are: the furthest split on the track, and the most recent one by time
+    let far = -1, recent = null;
+    SPLITS.forEach((k, i) => {
+      const j = S.judged[k];
+      if (!j) return;
+      far = i;
+      if (!recent || j.t > recent.t) recent = j;
+    });
+    const nextIdx = SPLITS.findIndex((k, i) => i > far && !S.judged[k]);
+    const nextKey = nextIdx >= 0 ? SPLITS[nextIdx] : null;
+    const ref = d.ref || {};
+    const target = nextKey && ref.splits && ref.splits[nextKey] ? ref.splits[nextKey].median : null;
+    const now = elapsed();
+    const from = recent ? recent.t : 0;
+    const late = target != null && now != null && d.live && now > target;
+
+    // live PB check: once the clock passes your PB run's next split, you're off PB pace
+    if (S.pb && nextKey && ref.pb && ref.pb.splits[nextKey] != null && now != null && now > ref.pb.splits[nextKey]) S.pb = null;
+    const pace = !!S.pb && on;
+    hud.classList.toggle('pbpace', pace);
+    if (S.user) paintPB(pace);
+
+    // phase: where you are, and how the last split went
+    $('ph').textContent = NAMES[recent ? recent.key : ''];
+    $('pht').textContent = recent ? fmt(recent.t) : '';
+    const phx = $('phx');
+    let px = '';
+    if (recent && recent.avg != null && recent.key !== 'finish') px = `<span class="chip" style="--vc:${VERDICTS[recent.v][1]}">${fmtD(recent.t - recent.avg)}</span>`;
+    else if (recent && recent.key === 'finish' && ref.pb) px = `<span class="chip" style="--vc:${VERDICTS[recent.v][1]}">${fmtD(recent.t - ref.pb.time)}</span>`;
+    else if (!recent && target != null) px = `<span class="hint">nether avg ${fmt(target)}</span>`;
+    if (phx.dataset.html !== px) {
+      phx.dataset.html = px;
+      phx.innerHTML = px;
+      const chip = phx.querySelector('.chip');
+      if (chip && recent) chip.classList.add('swap');
+    }
+
+    // track: a dot per split, each gap as long as that part of the run usually takes,
+    // and the gap ahead fills toward your average for the next split
+    const track = $('track');
+    if (!track.children.length) {
+      track.innerHTML = SPLITS.map(k => `<span class="seg"><i></i></span><span class="node${k === 'finish' ? ' fin' : ''}" data-k="${k}"></span>`).join('');
+    }
+    let prev = 0;
+    SPLITS.forEach((k, i) => {
+      const node = track.children[i * 2 + 1], seg = track.children[i * 2];
+      const med = ref.splits && ref.splits[k] ? ref.splits[k].median : null;
+      seg.style.flexGrow = med == null ? 1.5 : clamp((med - prev) / 60000, .6, 6).toFixed(2);
+      if (med != null) prev = Math.max(prev, med);
+      const j = S.judged[k];
+      node.classList.toggle('hit', !!j);
+      node.classList.toggle('next', i === nextIdx && on);
+      node.classList.toggle('late', i === nextIdx && late);
+      node.style.setProperty('--vc', j ? VERDICTS[j.v][1] : '');
+      if (S.popKey === k) { node.classList.remove('pop'); void node.offsetWidth; node.classList.add('pop'); }
+      seg.classList.toggle('done', !!j);
+      seg.classList.toggle('late', i === nextIdx && late);
+      const fill = i === nextIdx && target != null && now != null && target > from ? clamp((now - from) / (target - from), 0, 1) : 0;
+      seg.firstChild.style.width = j ? '' : (fill * 100).toFixed(1) + '%';
+    });
+    S.popKey = null;
+  }
+
+  // ---------- callouts ----------
+  function callout(c) {
+    S.q.push(c);
+    if (S.q.length > 3) S.q.shift();
+    if (!S.showing) nextCallout();
+  }
+  function nextCallout() {
+    const c = S.q.shift();
+    if (!c) { S.showing = false; return; }
+    S.showing = true;
+    const el = document.createElement('div');
+    el.className = 'co' + (c.gold ? ' gold' : '');
+    el.style.setProperty('--vc', c.vc);
+    el.innerHTML = `<span class="bar"></span><div><div class="k">${c.k}</div><div class="v">${c.v}</div></div>`
+      + (c.pb ? `<span class="pbc">PB PACE<b>${c.pb}</b></span>` : '') + (c.gold ? '<span class="shine"></span>' : '');
+    $('cos').appendChild(el);
+    if (c.gold) sparkle(el);
+    // a queue waiting behind this one makes it shorter
+    const dur = S.q.length ? 3200 : (c.dur || 5500);
+    setTimeout(() => {
+      el.classList.add('out');
+      setTimeout(() => { el.remove(); nextCallout(); }, 400);
+    }, dur);
+  }
+  function sparkle(el) {
+    for (let i = 0; i < 14; i++) {
+      const s = document.createElement('span');
+      s.className = 'spark';
+      const a = Math.random() * Math.PI * 2, r = 1.75 + Math.random() * 2.5;
+      s.style.left = (10 + Math.random() * 50) + '%';
+      s.style.top = (20 + Math.random() * 60) + '%';
+      s.style.setProperty('--dx', (Math.cos(a) * r).toFixed(2) + 'rem');
+      s.style.setProperty('--dy', (Math.sin(a) * r).toFixed(2) + 'rem');
+      s.style.animationDelay = (.45 + Math.random() * .35).toFixed(2) + 's';
+      el.appendChild(s);
+    }
+  }
+  function matchCallout(m, newElo) {
+    const word = m.res === 'win' ? 'Win' : m.res === 'loss' ? 'Loss' : 'Draw';
+    const vc = m.res === 'win' ? 'var(--win)' : m.res === 'loss' ? 'var(--loss)' : 'var(--okay)';
+    const bits = [];
+    if (m.change != null) bits.push(`${signed(m.change)} elo` + (newElo != null ? ` → ${newElo}` : ''));
+    if (m.time != null && !m.ff) bits.push(fmt(m.time));
+    if (m.ff) bits.push('forfeit');
+    callout({ vc, k: word, v: `vs <b>${esc(m.opp)}</b>` + (bits.length ? `<small>${bits.join(' · ')}</small>` : ''), dur: 7000 });
+  }
+
+  async function pollLive() {
+    clearTimeout(S.liveTimer);
+    let next = 1000;
+    if (cfg.demo) {
+      onLive(demo.state());
+      next = 250;
+    } else {
+      try {
+        const res = await fetch(cfg.live, { cache: 'no-store' });
+        onLive(await res.json());
+      } catch (e) {
+        // helper not running: stats only
+        if (S.live && S.live.live) { S.live = Object.assign({}, S.live, { live: false }); renderLive(); }
+        next = 5000;
+      }
+    }
+    S.liveTimer = setTimeout(pollLive, next);
+  }
+
+  // ---------- demo: ?demo plays a fake run so you can see every state (?demo=40 is faster) ----------
+  const demo = (() => {
+    const M = s => Math.round(s * 1000);
+    const spread = (med, best, n) => Array.from({ length: n }, (_, i) => Math.round(best + (med - best) * 2 * i / (n - 1))).sort((a, b) => a - b);
+    const ref = {
+      kind: 'ranked', runs: 22,
+      pb: { time: M(1409), splits: { nether: M(311), bastion: M(366), fortress: M(807), blind: M(892), stronghold: M(1203), end: M(1274), finish: M(1409) } },
+      splits: {},
+    };
+    [['nether', 251, 166, 22], ['bastion', 338, 200, 20], ['fortress', 665, 320, 11], ['blind', 982, 618, 9],
+     ['stronghold', 1385, 1038, 8], ['end', 1387, 1274, 5], ['finish', 1441, 1409, 2]].forEach(([k, med, best, n]) => {
+      ref.splits[k] = { n, median: M(med), best: M(best), times: spread(M(med), M(best), n) };
+    });
+    // one run: great nether, slow bastion (drops PB pace), back on it by fortress, best-ever stronghold, new PB
+    const RUN = { nether: M(226), bastion: M(372), fortress: M(600), blind: M(700), stronghold: M(1020), end: M(1150), finish: M(1330) };
+    const IDLE = 4000, AFTER = 14000;
+    let t0 = Date.now(), loop = 0, scored = false;
+    const span = () => IDLE + RUN.finish / cfg.demo + AFTER;
+    const tick = () => {
+      if (Date.now() - t0 > span()) { t0 = Date.now(); loop++; scored = false; }
+      return Date.now() - t0;
+    };
+    return {
+      game() { return Math.max(0, (tick() - IDLE) * cfg.demo); },
+      state() {
+        const w = tick(), g = Math.max(0, (w - IDLE) * cfg.demo);
+        const splits = {};
+        for (const k in RUN) if (g >= RUN[k]) splits[k] = RUN[k];
+        const live = w >= IDLE && g < RUN.finish + 4000 * cfg.demo;
+        if (!live && splits.finish != null && !scored && S.user) {
+          scored = true;
+          setTimeout(() => {
+            const gain = 18, m = { id: 'demo' + loop, date: Date.now() / 1000, res: 'win', opp: 'Opponent', oppElo: 494, time: RUN.finish, ff: false, change: gain };
+            const st = S.user.statistics || {}, season = st.season || {};
+            const best = season.bestTime && season.bestTime.ranked;
+            S.user = { ...S.user, eloRate: (S.user.eloRate || 500) + gain,
+              statistics: { ...st, season: { ...season, bestTime: { ranked: best ? Math.min(best, RUN.finish) : RUN.finish } } } };
+            S.matches = [m].concat(S.matches || []);
+            matchCallout(m, S.user.eloRate);
+            renderTop();
+          }, 3000);
+        }
+        return {
+          ok: true, world: 'demo #' + loop, kind: 'ranked', live, splits, finished: splits.finish != null,
+          match: { type: 'RANKED', opponent: 'Opponent', opponentElo: 494 }, ref,
+        };
+      },
+    };
+  })();
+
+  async function startDemo() {
+    if (cfg.u) { try { await poll(); } catch (e) {} clearTimeout(S.timer); }
+    if (!S.user) {
+      S.user = { uuid: 'demo', nickname: 'orq2', eloRate: 531, statistics: { season: { bestTime: { ranked: 1409166 } } } };
+      const now = Date.now() / 1000;
+      S.matches = ['loss', 'win', 'loss', 'win'].map((res, i) => ({ id: 'd' + i, date: now - i * 900, res, opp: 'x', change: res === 'win' ? 14 : -11 }));
+      store.set('mcsr-hud:session:demo', { start: now - 4000 });
+    }
+    S.primed = true;
+    renderTop();
+    pollLive();
+  }
+
+  setInterval(() => { if (S.live) renderLive(); }, 250);
+  renderTop();
+  if (cfg.demo) startDemo();
+  else { poll(); if (cfg.live !== '0') pollLive(); }
+})();
+</script>
+</body>
+</html>
