@@ -17,6 +17,8 @@
     font-variant-numeric: tabular-nums; font-variant-ligatures: none; letter-spacing: -.005em;
     color: var(--text); -webkit-font-smoothing: antialiased;
   }
+  /* sized by its content, so the size reported to the customizer is the real one */
+  #root { flex: none; width: max-content; }
   body.a-center { align-items: center; }
   body.a-right { align-items: flex-end; }
   body.v-bottom { justify-content: flex-end; }
@@ -201,6 +203,176 @@
   .sbn.list .ls b { margin-left: .25rem; font-weight: 600; }
   .sbn.list .rows { padding: .5rem var(--sp-pad) var(--sp-in); }
 
+  /* ---------- Minecraft styles: one text size, Minecraft's own colors, pixel frames ---------- */
+  .mc { --mc-red: #ff5555; --mc-gold: #ffaa00; --mc-yellow: #ffff55; --mc-gray: #aaaaaa; --mc-aqua: #55ffff; --mc-purple: #ff55ff;
+    font-size: 1rem; line-height: 1.125rem; letter-spacing: 0; }
+  .mc, .mc * { font-weight: 400 !important; }
+  .mc small, .mc .kv b small, .mc .stat b small, .mc .kv2 b small { font-size: inherit; color: var(--muted); }
+  .mc .flag { height: .75rem; }
+  .mc .mini { width: 1rem; height: 1rem; border-radius: 0; }
+  .mc .tier { font-weight: 400; }
+  .mc i.lt { font-style: normal; }
+  .mc .nm, .mc .sub, .mc .el, .mc .pm, .mc .mh, .mc .sess, .mc .sess .d, .mc .stat b, .mc .stat span, .mc .lh .nm, .mc .lh .ls, .mc .lh .ls b { font-size: 1rem; line-height: 1.125rem; }
+  .mc .pm span { white-space: nowrap; }
+  .mc .ln { white-space: nowrap; }
+  .mc .rk, .mc .mini, .mc .flag, .mc .si { vertical-align: -.1875rem; }
+  .mc .si img { vertical-align: top; }
+  .mc .ln .ev, .mc .bt .ev, .mc .btn .ev, .ssc .ev { font-size: inherit; line-height: inherit; letter-spacing: 0; }
+  .mc .kv b, .mc .kv b.big { font-size: 1rem; line-height: 1.125rem; letter-spacing: 0; } .mc .kv span { font-size: 1rem; }
+  .mc .gap { height: 1.125rem; }
+  .mc .ml .m { min-height: 1.125rem; padding: 0; gap: .5rem; }
+  .mc .r, .mc .c { font-weight: 400; }
+  .mc .t, .mc .ago, .mc .ff { font-size: inherit; }
+  .mc .ago { width: auto; }
+  .mc .op em { font-size: inherit; }
+  .mc .stale { border-radius: 0; }
+  .c-gold { color: var(--mc-gold); } .c-yellow { color: var(--mc-yellow); } .c-gray { color: var(--mc-gray); } .c-aqua { color: var(--mc-aqua); }
+  /* Minecraft's text shadow: the same color at a quarter brightness, one pixel down-right */
+  body.mc.tshadow .ov { text-shadow: .125rem .125rem 0 rgba(0,0,0,.7); }
+  @supports (color: color-mix(in srgb, red, blue)) {
+    body.mc.tshadow .ov, body.mc.tshadow .ov * { text-shadow: .125rem .125rem 0 color-mix(in srgb, currentColor 25%, #000); }
+  }
+  .mc.shadowed { box-shadow: none; filter: drop-shadow(0 .5rem 1rem rgba(0,0,0,.35)); }
+  /* 2px pixel ring drawn outside the box, corners left out, like Minecraft's GUI frames */
+  .mc { --ring: transparent; --rw: .125rem; }
+  .mc.ringed { box-shadow: 0 calc(var(--rw) * -1) 0 0 var(--ring), 0 var(--rw) 0 0 var(--ring), calc(var(--rw) * -1) 0 0 0 var(--ring), var(--rw) 0 0 0 var(--ring), var(--inner, 0 0 transparent); }
+
+  /* scoreboard: the sidebar, red scores on the right */
+  .ssc.card, .ssc.compact, .ssc.list { width: max-content; min-width: 10rem; padding: 0 0 .125rem; }
+  .ssc .hd { display: flex; justify-content: center; align-items: center; gap: .375rem; padding: .0625rem .375rem; background: rgba(0,0,0,.12); white-space: nowrap; }
+  .ssc .ln { display: flex; justify-content: space-between; gap: 1.5rem; padding: 0 .375rem; }
+  .ssc .ln b { color: var(--mc-red); }
+  .ssc .ln b.pos { color: var(--win); } .ssc .ln b.neg { color: var(--loss); } .ssc .ln b.zero { color: var(--muted); }
+  .ssc .ln i { font-style: normal; } .ssc i.win { color: var(--win); } .ssc i.loss { color: var(--loss); } .ssc i.draw { color: var(--muted); }
+  .ssc .ln em { font-style: normal; color: var(--muted); }
+  .ssc.bar { align-items: stretch; gap: 0; padding: 0; }
+  .ssc.bar > * { display: flex; align-items: center; gap: .375rem; padding: .0625rem .5rem; }
+  .ssc.bar b { color: var(--mc-red); } .ssc.bar b.pos { color: var(--win); } .ssc.bar b.neg { color: var(--loss); } .ssc.bar b.zero { color: var(--muted); }
+
+  /* F3: the debug screen, a gray box behind every line */
+  .sf3.ov { display: flex; flex-direction: column; align-items: flex-start; overflow: visible; background: none; border-radius: 0; }
+  body.a-right .sf3.ov { align-items: flex-end; }
+  .sf3.card, .sf3.compact, .sf3.list, .sf3.bar { width: max-content; min-width: 0; padding: 0; }
+  .sf3 .hd { display: flex; flex-direction: column; align-items: inherit; }
+  .sf3 .ln { display: block; width: max-content; padding: 0 .125rem; background-color: var(--bg); background-image: var(--tex, none), var(--fill, none); background-size: var(--tex-size, auto), 100% 100%; }
+  .sf3 .pt { white-space: nowrap; } .sf3 .pt + .pt { margin-left: 1rem; }
+  .sf3 .u { text-decoration: underline; text-underline-offset: .1875rem; text-decoration-thickness: .125rem; }
+  .sf3 .toast { right: auto; padding: 0 .25rem; background: var(--bg); box-shadow: none; }
+
+  /* chat: messages over a translucent black box, newest at the bottom */
+  .sch.card, .sch.list { padding: .125rem 0; }
+  .sch.compact, .sch.bar { width: max-content; min-width: 0; padding: .125rem 0; display: block; }
+  .sch .ln { display: block; padding: 0 .25rem; white-space: normal; }
+  .sch .ln .rk, .sch .ln .si, .sch .ln .mini, .sch .ln .flag { vertical-align: -.125rem; }
+  .sch .ln .si img { vertical-align: top; }
+  .sch .hd { display: block; }
+  .sch.bar .ln, .sch.compact .ln { white-space: nowrap; }
+
+  /* advancement: the toast that slides in at the top right */
+  .sad { --ring: #000; --inner: inset 0 0 0 .125rem #5a5a5a; background-color: var(--bg); }
+  .sad.card, .sad.list { padding: .625rem .75rem .75rem; }
+  .sad.compact { min-width: 17.5rem; padding: .625rem .875rem .625rem .625rem; }
+  .sad .nm { font-size: 1rem; color: var(--adv, var(--mc-yellow)); }
+  .sad .sub { margin-top: .125rem; font-size: 1rem; color: var(--text); }
+  .sad .el, .sad .pm, .sad .mh, .sad .stat span, .sad .kv span, .sad .sess { font-size: 1rem; }
+  .sad .ev { font-size: 1.5rem; line-height: 1.125; }
+  .sad .sec { border-top: 0; margin-top: .625rem; padding-top: 0; }
+  .sad .track { height: .25rem; border-radius: 0; background: #000; }
+  .sad.bar { padding: .5rem .875rem .5rem .625rem; align-items: center; }
+  .sad .kv b, .sad .kv b.big { font-size: 1rem; line-height: 1.125rem; }
+  .sad .btrack { height: .25rem; }
+
+  /* inventory: the light gray container GUI with sunken slots */
+  .sin { --ring: #000; --inner: inset .125rem .125rem 0 #fff, inset -.125rem -.125rem 0 #555; background-color: var(--bg); }
+  .sin.card, .sin.list { padding: .75rem; }
+  .sin.compact { padding: .5rem .75rem .5rem .5rem; }
+  .sin.bar { padding: .375rem 1rem .375rem .375rem; align-items: center; }
+  .slot, .sin .stat, .sin .kv { background: #8b8b8b; box-shadow: inset .125rem .125rem 0 #373737, inset -.125rem -.125rem 0 #fff; }
+  .slot { display: inline-flex; flex: none; padding: .1875rem; }
+  .sin .stat, .sin .kv { padding: .25rem .375rem .3125rem; }
+  .sin .stat b, .sin .kv b { color: #fff; text-shadow: .125rem .125rem 0 #3f3f3f; font-size: 1rem; line-height: 1.125rem; }
+  .sin .stat b small, .sin .kv b small { color: #e0e0e0; }
+  .sin .stat span, .sin .kv span { color: #3f3f3f; font-size: 1rem; }
+  .sin .kv b.pos { color: #55ff55; } .sin .kv b.neg { color: #ff5555; }
+  .sin .nm, .sin .sub, .sin .el, .sin .pm, .sin .mh, .sin .sess { font-size: 1rem; }
+  .sin .tier { color: var(--text); }
+  .sin .ev { font-size: 1.5rem; line-height: 1.125; }
+  .sin .sec { border-top: 0; margin-top: .625rem; padding-top: 0; }
+  .sin .track, .sin .btrack { height: .5rem; border-radius: 0; background: #373737; box-shadow: inset 0 0 0 .125rem #8b8b8b; }
+  .sin .btrack { left: .125rem; right: .125rem; bottom: .125rem; }
+  .sin .vr { background: #8b8b8b; width: .125rem; }
+
+  /* boss bar: the title over a notched bar, filled with your tier progress */
+  .sbb { text-align: center; }
+  .sbb .hd, .sxp .hd { display: block; }
+  .sbb.card, .sbb.list { padding: .5rem .75rem .75rem; }
+  .sbb.compact { min-width: 0; padding: .375rem .5rem .5rem; }
+  .sbb.bar { display: block; padding: .375rem .5rem .5rem; }
+  .sbb .bt { white-space: nowrap; }
+  .bb { position: relative; height: .625rem; margin-top: .375rem; background: rgba(0,0,0,.55); box-shadow: inset 0 0 0 .125rem rgba(0,0,0,.6); }
+  @supports (color: color-mix(in srgb, red, blue)) { .bb { background: color-mix(in srgb, var(--tier) 22%, #0a0a0a); } }
+  .bb i { display: block; height: 100%; background: var(--tier); box-shadow: inset 0 .125rem 0 rgba(255,255,255,.35), inset 0 -.125rem 0 rgba(0,0,0,.3); transition: width .8s ease; }
+  .bb::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - .125rem), rgba(0,0,0,.4) calc(10% - .125rem) 10%); }
+  .sbb.compact .bb { width: 18rem; }
+  .sbb .ln, .sxp .ln { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 1rem; white-space: normal; color: var(--muted); }
+  .sbb .ln > span, .sxp .ln > span { white-space: nowrap; }
+  .sbb .ln b { color: var(--text); }
+  .sbb .lns { margin-top: .5rem; }
+  .sbb .ml { margin-top: .5rem; text-align: left; }
+
+  /* XP: the elo as the green level number over the experience bar */
+  .sxp { text-align: center; }
+  .sxp.card, .sxp.list { padding: .5rem .75rem .75rem; }
+  .sxp.compact { min-width: 0; padding: .25rem .5rem .5rem; }
+  .sxp.bar { align-items: center; gap: 1.25rem; padding: .375rem 1rem .375rem .5rem; }
+  .sxp .xt { white-space: nowrap; }
+  .sxp .xl { display: flex; flex-direction: column; align-items: center; margin-top: .25rem; }
+  .sxp .lv { position: relative; z-index: 1; margin-bottom: -.3125rem; font-size: 1.5rem; line-height: 1.5rem; color: #80ff20;
+    text-shadow: .125rem 0 0 #000, -.125rem 0 0 #000, 0 .125rem 0 #000, 0 -.125rem 0 #000 !important; }
+  .xb { position: relative; width: 100%; height: .625rem; background: #1c1c1c; box-shadow: inset 0 0 0 .125rem #000; }
+  .xb i { display: block; height: 100%; background: #80ff20; box-shadow: inset 0 .125rem 0 #b8ff70, inset 0 -.125rem 0 #3f8a10, inset .125rem 0 0 #000; transition: width .8s ease; }
+  .xb::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(5.555% - .125rem), rgba(0,0,0,.55) calc(5.555% - .125rem) 5.555%); }
+  .sxp.compact .xl, .sxp.bar .xl { width: 18rem; }
+  .sxp .ln b { color: var(--text); }
+  .sxp .lns { margin-top: .5rem; }
+  .sxp .ml { margin-top: .5rem; text-align: left; }
+  .sxp.bar .who { margin: 0; text-align: left; }
+
+  /* buttons: the menu, one stone button per line, the elo one hovered */
+  .sbt.ov { display: flex; flex-direction: column; gap: .25rem; overflow: visible; background: none; border-radius: 0; }
+  .sbt.card, .sbt.list { padding: .125rem; }
+  .sbt.compact { width: calc(var(--w) * 1rem / 16); min-width: 0; padding: .125rem; }
+  .sbt.bar { flex-direction: row; align-items: stretch; gap: .25rem; padding: .125rem; }
+  .btn, .sbt .ml .m { position: relative; display: flex; align-items: center; justify-content: center; gap: .375rem; min-height: 2.25rem; padding: 0 .625rem; white-space: nowrap;
+    background-color: var(--bg); background-image: var(--speckle), var(--fill, none); background-size: 2rem 2rem, 100% 100%; image-rendering: pixelated;
+    box-shadow: inset .125rem .125rem 0 rgba(255,255,255,.28), inset -.125rem -.1875rem 0 rgba(0,0,0,.3), 0 0 0 .125rem #000; }
+  .btn.hov { box-shadow: inset .125rem .125rem 0 rgba(255,255,255,.28), inset -.125rem -.1875rem 0 rgba(0,0,0,.3), 0 0 0 .125rem #fff; color: #ffffa0; }
+  .btn.hov .ev { color: inherit; }
+  .brow { display: flex; gap: .25rem; } .brow > .btn { flex: 1 1 0; min-width: 0; overflow: hidden; }
+  .btn.sl { background-color: #1c1c1c; background-image: none; box-shadow: 0 0 0 .125rem #000, inset 0 0 0 .125rem #000; }
+  .btn.sl .knob { position: absolute; top: 0; bottom: 0; width: 1rem; margin-left: -.5rem; background-color: var(--bg); background-image: var(--speckle); background-size: 2rem 2rem;
+    box-shadow: inset .125rem .125rem 0 rgba(255,255,255,.28), inset -.125rem -.1875rem 0 rgba(0,0,0,.3), 0 0 0 .125rem #000; transition: left .8s ease; }
+  .btn.sl span { position: relative; }
+  .sbt .ml { display: flex; flex-direction: column; gap: .25rem; }
+  .sbt .ml .m { justify-content: flex-start; min-height: 2rem; gap: .625rem; }
+  .sbt .toast { background-color: var(--bg); background-image: var(--speckle); background-size: 2rem 2rem; box-shadow: inset 3px 0 0 var(--tc), 0 0 0 .125rem #000; }
+
+  /* MCSR Ranked: a dark panel with a light pixel frame, green name and a green elo box, like the site's logo */
+  .srk { --mg: #6fb23c; --ring: #c6c6c6; --rw: .1875rem; background-color: var(--bg); }
+  .srk.card, .srk.list { padding: .875rem; }
+  .srk.compact { padding: .625rem .625rem .625rem .75rem; }
+  .srk .nm { color: var(--mg); text-transform: uppercase; font-size: 1rem; }
+  .srk .sub, .srk .pm, .srk .mh, .srk .stat span, .srk .kv span, .srk .sess, .srk .el { font-size: 1rem; text-transform: uppercase; }
+  .srk .hd > .elo, .srk .kv b.big { position: relative; padding: .375rem .5rem .3125rem; background: var(--mg); color: #0b1d20;
+    box-shadow: 0 -.1875rem 0 0 #c6c6c6, 0 .1875rem 0 0 #c6c6c6, -.1875rem 0 0 0 #c6c6c6, .1875rem 0 0 0 #c6c6c6; }
+  .srk .hd > .elo .ev { font-size: 1.5rem; line-height: 1.125; color: #0b1d20; }
+  .srk .hd > .elo .el { color: #0b1d20; margin-top: .125rem; }
+  .srk .hd > .elo .el b { color: #0b1d20; }
+  .srk .kv b.big { font-size: 1.25rem; padding: .25rem .5rem; margin: .1875rem; }
+  .srk .sec { border-top: .1875rem solid #27393b; }
+  .srk .track { height: .375rem; border-radius: 0; background: #27393b; }
+  .srk .stat b { font-size: 1rem; }
+
   /* messages */
   .msg .mt { font-size: .875rem; font-weight: 600; }
   .msg .mb { margin-top: .25rem; font-size: .75rem; line-height: 1.45; color: var(--muted); white-space: normal; }
@@ -254,11 +426,23 @@
 
   // Each style brings its own look; any of these can still be overridden by a URL param.
   const STYLE_THEMES = {
-    badge:   { avatar: false, font: 'rubik', bg: '000000', bga: 0,  text: 'ffffff', win: '4ade80', loss: 'f87171', radius: 8, border: false, shadow: false, tshadow: true },
-    tooltip: { avatar: false, font: 'mc', bg: '100010', bga: 94, text: 'ffffff', win: '6ee78a', loss: 'ff7b7b', radius: 0, border: true,  shadow: false, tshadow: false },
-    banner:  { avatar: false, font: 'rubik', bg: '181b20', bga: 96, text: 'ffffff', win: '4ade80', loss: 'f87171', radius: 0, border: true,  shadow: false, tshadow: false },
-    clean:   { avatar: false, font: 'geist', bg: '0f1115', bga: 92, text: 'eceef2', win: '4ade80', loss: 'f87171', radius: 8, border: true,  shadow: false, tshadow: false },
+    badge:   { avatar: false, font: 'rubik', bg: '000000', bga: 0,  text: 'ffffff', win: '4ade80', loss: 'f87171', radius: 8, border: false, shadow: false, tshadow: true, width: 320 },
+    tooltip: { avatar: false, font: 'mc', bg: '100010', bga: 94, text: 'ffffff', win: '6ee78a', loss: 'ff7b7b', radius: 0, border: true,  shadow: false, tshadow: false, width: 320 },
+    banner:  { avatar: false, font: 'rubik', bg: '181b20', bga: 96, text: 'ffffff', win: '4ade80', loss: 'f87171', radius: 0, border: true,  shadow: false, tshadow: false, width: 320 },
+    clean:   { avatar: false, font: 'geist', bg: '0f1115', bga: 92, text: 'eceef2', win: '4ade80', loss: 'f87171', radius: 8, border: true,  shadow: false, tshadow: false, width: 320 },
+    // Minecraft's own screens, in Minecraft's colors
+    scoreboard:  { avatar: false, font: 'mc', bg: '000000', bga: 30,  text: 'ffffff', muted: 'aaaaaa', win: '55ff55', loss: 'ff5555', radius: 0, border: false, shadow: false, tshadow: false, width: 320 },
+    f3:          { avatar: false, font: 'mc', bg: '505050', bga: 56,  text: 'e0e0e0', muted: 'a8a8a8', win: '55ff55', loss: 'ff5555', radius: 0, border: false, shadow: false, tshadow: false, width: 320 },
+    chat:        { avatar: false, font: 'mc', bg: '000000', bga: 50,  text: 'ffffff', muted: 'aaaaaa', win: '55ff55', loss: 'ff5555', radius: 0, border: false, shadow: false, tshadow: true,  width: 420 },
+    advancement: { avatar: false, font: 'mc', bg: '212121', bga: 100, text: 'ffffff', muted: 'a0a0a0', win: '55ff55', loss: 'ff5555', radius: 0, border: true,  shadow: false, tshadow: false, width: 352 },
+    inventory:   { avatar: false, font: 'mc', bg: 'c6c6c6', bga: 100, text: '404040', muted: '555555', win: '00aa00', loss: 'aa0000', radius: 0, border: true,  shadow: false, tshadow: false, width: 352 },
+    bossbar:     { avatar: false, font: 'mc', bg: '000000', bga: 0,   text: 'ffffff', muted: 'aaaaaa', win: '55ff55', loss: 'ff5555', radius: 0, border: false, shadow: false, tshadow: true,  width: 364 },
+    xp:          { avatar: false, font: 'mc', bg: '000000', bga: 0,   text: 'ffffff', muted: 'aaaaaa', win: '55ff55', loss: 'ff5555', radius: 0, border: false, shadow: false, tshadow: true,  width: 364 },
+    buttons:     { avatar: false, font: 'mc', bg: '6f6f6f', bga: 100, text: 'ffffff', muted: 'dddddd', win: '55ff55', loss: 'ff7a7a', radius: 0, border: false, shadow: false, tshadow: true,  width: 400 },
+    ranked:      { avatar: false, font: 'mc', bg: '0c2124', bga: 96,  text: 'e6e6e6', muted: '86a0a3', win: '7ccf3c', loss: 'ff6161', radius: 0, border: true,  shadow: false, tshadow: false, width: 352 },
   };
+  const MC_STYLES = ['scoreboard', 'f3', 'chat', 'advancement', 'inventory', 'bossbar', 'xp', 'buttons', 'ranked'];
+  const FRAMED = ['advancement', 'inventory', 'ranked']; // their border is a pixel frame
 
   // [family, Google Fonts spec, or a direct font file]
   const FONTS = {
@@ -318,7 +502,8 @@
   const $ = (s, el = document) => el.querySelector(s);
   const pad = n => String(n).padStart(2, '0');
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  const num = n => n == null ? '—' : Number(n).toLocaleString('en-US');
+  // Minecraft never puts separators in numbers, so the Minecraft styles don't either
+  const num = n => n == null ? '—' : MC_STYLES.includes(cfg.style) ? String(n) : Number(n).toLocaleString('en-US');
   const pct = n => n == null ? '—' : Math.round(n * 100) + '%';
   const signed = n => n == null ? '—' : n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0';
   const signCls = n => !n ? 'zero' : n > 0 ? 'pos' : 'neg';
@@ -376,6 +561,9 @@
     c.refresh = Math.max(15, c.refresh);
     c.matches = Math.max(0, Math.min(15, Math.round(c.matches)));
     c.scale = Math.max(30, Math.min(400, c.scale));
+    // ?demo shows a made-up player instead of calling the API; ?demo=1850 picks their elo
+    c.demo = raw.demo !== undefined && raw.demo !== null && !/^(0|false|off|no)$/i.test(String(raw.demo))
+      ? (parseFloat(raw.demo) >= 100 ? parseFloat(raw.demo) : 1) : 0;
     return c;
   }
 
@@ -417,8 +605,20 @@
       st.textContent = `@font-face { font-family: '${f[0]}'; src: url(${f[2]}) format('truetype'); font-display: swap; }`;
       document.head.appendChild(st);
     }
-    document.body.className = [`a-${cfg.align}`, `v-${cfg.valign}`, `st-${cfg.style}`, cfg.tshadow && 'tshadow'].filter(Boolean).join(' ');
+    document.body.className = [`a-${cfg.align}`, `v-${cfg.valign}`, `st-${cfg.style}`, MC_STYLES.includes(cfg.style) && 'mc', cfg.tshadow && 'tshadow'].filter(Boolean).join(' ');
   }
+
+  // Stone speckle for the button style: a 16×16 tile of slightly lighter and darker pixels.
+  (() => {
+    let px = '', seed = 7;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      const r = rnd();
+      if (r < .22) px += `<rect x='${x}' y='${y}' width='1' height='1' fill='%23000' fill-opacity='${(.06 + rnd() * .1).toFixed(2)}'/>`;
+      else if (r > .8) px += `<rect x='${x}' y='${y}' width='1' height='1' fill='%23fff' fill-opacity='${(.05 + rnd() * .08).toFixed(2)}'/>`;
+    }
+    document.documentElement.style.setProperty('--speckle', `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E${px}%3C/svg%3E")`);
+  })();
 
   // ---------- data ----------
   async function api(path) {
@@ -514,19 +714,70 @@
   function restart() {
     clearTimeout(state.timer);
     clearTimeout(state.toastTimer);
-    Object.assign(state, { user: null, matches: null, key: null, primed: false, error: null, gen: state.gen + 1, shownElo: null, toast: null });
+    Object.assign(state, { user: null, matches: null, key: null, primed: false, error: null, gen: state.gen + 1, shownElo: null, toast: null, sim: null });
     render();
     poll();
   }
 
+  // ---------- demo player and simulated matches ----------
+  // Opponents are mobs, so no real player's name or skin shows up in a demo.
+  const MOBS = [['Blaze', 'MHF_Blaze'], ['Enderman', 'MHF_Enderman'], ['Piglin', 'MHF_PigZombie'], ['Creeper', 'MHF_Creeper'], ['Villager', 'MHF_Villager'],
+    ['Golem', 'MHF_Golem'], ['Skeleton', 'MHF_Skeleton'], ['Ghast', 'MHF_Ghast'], ['Zombie', 'MHF_Zombie'], ['Alex', 'MHF_Alex']];
+  const OVERWORLDS = ['VILLAGE', 'SHIPWRECK', 'BURIED_TREASURE', 'DESERT_TEMPLE', 'RUINED_PORTAL'], BASTIONS = ['TREASURE', 'BRIDGE', 'HOUSING', 'STABLES'];
+  let simN = 0;
+  function fakeMatch(res, secondsAgo) {
+    const i = simN++, [opp, head] = MOBS[i % MOBS.length];
+    const elo = state.user && state.user.eloRate != null ? state.user.eloRate : 1712;
+    const ow = OVERWORLDS[i % OVERWORLDS.length], bt = BASTIONS[(i * 3) % BASTIONS.length];
+    return {
+      id: `sim${i}-${Date.now()}`, date: Date.now() / 1000 - (secondsAgo || 0), res, opp, oppUuid: head, oppElo: elo + (i * 37) % 120 - 60,
+      time: res === 'draw' ? null : 540000 + (i * 7919) % 300000, ff: res === 'loss' && i % 4 === 3,
+      change: res === 'win' ? 9 + (i * 5) % 9 : res === 'loss' ? -(8 + (i * 3) % 9) : 0,
+      seedType: ow, bastion: bt, seed: titleCase(ow) + ' · ' + titleCase(bt),
+    };
+  }
+  function demoUser() {
+    const elo = cfg.demo >= 100 ? Math.round(cfg.demo) : 1712, r = n => ({ ranked: n });
+    const season = { bestTime: r(581204), wins: r(142), loses: r(97), playedMatches: r(251), completions: r(118), completionTime: r(118 * 748000),
+      currentWinStreak: r(3), highestWinStreak: r(9), forfeits: r(14) };
+    return { uuid: 'MHF_Steve', nickname: cfg.u || 'Steve', eloRate: elo, eloRank: Math.max(1, Math.round(30000 * Math.exp(-elo / 380))),
+      country: 'se', seasonResult: { highest: elo + 91 }, statistics: { season, total: season }, timestamp: { lastRanked: 0 } };
+  }
+  function loadDemo() {
+    state.user = demoUser();
+    simN = 0;
+    state.matches = ['win', 'win', 'loss', 'win', 'loss', 'win', 'win', 'loss', 'win', 'draw', 'win', 'loss', 'win', 'win', 'loss'].map((r, i) => fakeMatch(r, 1500 + i * 1800));
+    store.set(sessionKey(), { start: Date.now() / 1000 - 7000 }); // the newest four count as this session
+    state.primed = true;
+  }
+  // A made-up result on top of whatever's showing (preview and demo only, nothing is saved).
+  function simulate(res) {
+    if (!state.user) return;
+    const m = fakeMatch(res, 0);
+    state.sim = state.sim || { elo: 0, matches: [] };
+    state.sim.elo += m.change;
+    state.sim.matches.unshift(m);
+    if (state.user.eloRate != null) state.user = Object.assign({}, state.user, { eloRate: state.user.eloRate + m.change });
+    state.matches = [m].concat(state.matches || []);
+    if (cfg.popup) showToast(m);
+    render();
+  }
+
   async function poll() {
     clearTimeout(state.timer);
+    if (cfg.demo) {
+      if (!state.user) loadDemo();
+      notify({ type: 'mcsr:status', ok: true, demo: true, nickname: state.user.nickname, elo: state.user.eloRate, tier: tierOf(state.user.eloRate).name });
+      notify({ type: 'mcsr:data', user: state.user, matches: state.matches });
+      return render();
+    }
     if (!cfg.u) return render();
     const gen = state.gen;
     let delay = cfg.refresh * 1000;
     try {
-      const user = await api('/users/' + encodeURIComponent(cfg.u));
+      let user = await api('/users/' + encodeURIComponent(cfg.u));
       if (gen !== state.gen) return;
+      if (state.sim && user.eloRate != null) user = Object.assign({}, user, { eloRate: user.eloRate + state.sim.elo });
       // only refetch matches when the profile says something changed
       const played = (((user.statistics || {}).total || {}).playedMatches || {}).ranked;
       const key = [user.uuid, (user.timestamp || {}).lastRanked, played].join(':');
@@ -536,13 +787,14 @@
         const parsed = list.filter(m => !m.decayed).map(m => parseMatch(m, user.uuid));
         const prevTop = state.matches && state.matches[0] ? state.matches[0].id : null;
         if (state.primed && cfg.popup && parsed[0] && parsed[0].id !== prevTop) showToast(parsed[0]);
-        state.matches = parsed;
+        state.matches = state.sim ? state.sim.matches.concat(parsed) : parsed;
         state.key = key;
         state.primed = true;
       }
       state.user = user;
       state.error = null;
-      notify({ type: 'mcsr:status', ok: true, nickname: user.nickname, elo: user.eloRate });
+      notify({ type: 'mcsr:status', ok: true, nickname: user.nickname, elo: user.eloRate, tier: tierOf(user.eloRate).name });
+      notify({ type: 'mcsr:data', user: state.user, matches: state.matches });
     } catch (e) {
       if (gen !== state.gen) return;
       state.error = e;
@@ -557,9 +809,11 @@
 
   // ---------- shared pieces ----------
   function shell(cls, inner, v) {
-    const c = ['ov', cls, cfg.border && 'bordered', cfg.shadow && 'shadowed'].filter(Boolean).join(' ');
+    const framed = FRAMED.includes(cfg.style);
+    const c = ['ov', cls, MC_STYLES.includes(cfg.style) && 'mc', cfg.border && (framed ? 'ringed' : 'bordered'), cfg.shadow && 'shadowed'].filter(Boolean).join(' ');
     const col = v && (isHex(cfg.accent) ? '#' + cfg.accent.replace('#', '') : v.tier.color);
-    const style = v ? `--tier:${col};--tier-soft:${rgba(rgb(col), .1)}` : '';
+    // Netherite gets the purple "challenge" title in the advancement style
+    const style = v ? `--tier:${col};--tier-soft:${rgba(rgb(col), .1)}${v.tier.name === 'Netherite' ? ';--adv:#ff55ff' : ''}` : '';
     return `<div class="${c}" style="${style}">${inner}</div>`;
   }
   function msgCard(title, body) {
@@ -656,9 +910,9 @@
   const tierSub = v => cfg.tier ? (cfg.avatar ? badge(v, .9375) : '') + tierName(v) : '';
 
   const clean = {
-    card(v) {
+    card(v, o = {}) {
       const under = join(v.rank, !v.prog && v.peak && 'peak ' + v.peak);
-      let h = `<div class="hd">${lead(v, 2.8125)}
+      let h = `<div class="hd">${(o.lead || lead)(v, 2.8125)}
         <div class="who">${nameHtml(v.u)}${cfg.tier ? `<div class="sub">${tierSub(v)}</div>` : ''}</div>
         <div class="elo"><div class="ev">${v.elo}</div><div class="el">${under || (v.unrated ? 'placements' : 'elo')}</div></div></div>`;
       if (v.prog) h += `<div class="prog">${trackHtml(v)}<div class="pm"><span>${v.peak ? `Peak <b>${v.peak}</b>` : v.tier.name}</span><span>${nextTxt(v)}</span></div></div>`;
@@ -669,32 +923,32 @@
       }
       if (v.sess) h += `<div class="sec sess ${hit}"><span>Session</span><span class="rec">${v.sess.rec}</span><span class="d ${signCls(v.sess.elo)}">${signed(v.sess.elo)}</span></div>`;
       if (cfg.matches > 0) h += `<div class="sec"><div class="mh"><span>Recent matches</span><span>Elo</span></div>${rowsHtml(v.list)}</div>`;
-      return shell('card', h, v);
+      return shell('card' + (o.cls ? ' ' + o.cls : ''), h, v);
     },
-    bar(v) {
+    bar(v, o = {}) {
       const sub = join(tierSub(v), v.rank);
-      let h = lead(v, 1.875) + `<div class="who">${nameHtml(v.u)}${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
+      let h = (o.lead || lead)(v, 1.875) + `<div class="who">${nameHtml(v.u)}${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
       h += '<div class="vr"></div>' + kv(v.unrated ? 'Placements' : 'Elo', v.elo, 'big ev');
       if (v.peak) h += kv('Peak', v.peak);
       h += v.stats.map(([k, x]) => kv(k, x)).join('');
       if (v.sess) h += '<div class="vr"></div>' + `<div class="kv ${hit}"><b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b><span>Session ${v.sess.rec}</span></div>`;
       if (v.list.length) h += '<div class="vr"></div>' + `<div class="kv">${deltas(v.list)}<span>Last ${v.list.length}</span></div>`;
       if (v.prog) h += trackHtml(v, 'btrack');
-      return shell('bar', h, v);
+      return shell('bar' + (o.cls ? ' ' + o.cls : ''), h, v);
     },
-    compact(v) {
+    compact(v, o = {}) {
       const sub = join(tierSub(v), v.rank);
       const under = underLine(v);
-      let h = `<div class="hd">${lead(v, 1.875)}<div class="who">${nameHtml(v.u)}${sub ? `<div class="sub">${sub}</div>` : ''}</div>
+      let h = `<div class="hd">${(o.lead || lead)(v, 1.875)}<div class="who">${nameHtml(v.u)}${sub ? `<div class="sub">${sub}</div>` : ''}</div>
         <div class="elo"><div class="ev">${v.elo}</div><div class="el">${under}</div></div></div>`;
       if (v.prog) h += trackHtml(v, 'btrack');
-      return shell('compact', h, v);
+      return shell('compact' + (o.cls ? ' ' + o.cls : ''), h, v);
     },
-    matches(v) {
-      let h = `<div class="lh">${badge(v, .9375)}${nameHtml(v.u)}<span class="muted">${v.unrated ? 'placements' : v.elo + ' elo'}</span>`;
+    matches(v, o = {}) {
+      let h = `<div class="lh">${o.lead ? o.lead(v, .9375) : badge(v, .9375)}${nameHtml(v.u)}<span class="muted">${v.unrated ? 'placements' : v.elo + ' elo'}</span>`;
       if (v.sess) h += `<span class="ls ${hit}">Session<b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b></span>`;
       h += `</div><div class="sec">${rowsHtml((state.matches || []).slice(0, cfg.matches || 5))}</div>`;
-      return shell('card list', h, v);
+      return shell('card list' + (o.cls ? ' ' + o.cls : ''), h, v);
     },
   };
 
@@ -812,14 +1066,282 @@
     },
   };
 
-  const STYLES = { badge: badgeStyle, tooltip, banner, clean };
+  // ---------- Minecraft styles ----------
+  // The name as inline text (head, name, flag) for the styles built from lines of text.
+  function nameIn(u) {
+    const head = cfg.avatar ? `<img class="mini" src="${headSrc(u)}" alt="" onerror="this.remove()"> ` : '';
+    const flag = cfg.flag && u.country ? ` <img class="flag" src="https://flagcdn.com/w40/${esc(u.country.toLowerCase())}.png" alt="" onerror="this.remove()">` : '';
+    return `${head}<span>${esc(cfg.label || u.nickname)}</span>${flag}`;
+  }
+  const resCls = m => m.res === 'win' ? 'pos' : m.res === 'loss' ? 'neg' : 'zero';
+  const letters = list => list.map(m => `<i class="lt ${resCls(m)}">${letter(m)}</i>`).join('');
+  const sgn = n => `<span class="${signCls(n)}">${signed(n)}</span>`;
+  const pct100 = v => (v.prog ? v.tier.pct * 100 : 100).toFixed(1);
+  // Pieces of a match row for the text styles
+  function bits(m) {
+    const imgs = cfg.seed ? [SEED_ICONS[m.seedType], SEED_ICONS[m.bastion]].filter(Boolean).map(src => `<img src="${src}" alt="">`).join('') : '';
+    return {
+      head: cfg.heads && m.oppUuid ? `<img class="mini" src="https://mc-heads.net/avatar/${m.oppUuid}/32" alt="" onerror="this.remove()"> ` : '',
+      opp: esc(m.opp), oe: cfg.oppelo && m.oppElo != null ? m.oppElo : '',
+      seeds: imgs ? `<span class="si" title="${esc(m.seed)}">${imgs}</span>` : cfg.seed && m.seed ? esc(m.seed) : '',
+      time: m.time != null ? fmtTime(m.time) : '', ago: cfg.ago ? ago(m.date) : '',
+    };
+  }
+
+  // scoreboard: the sidebar
+  const scoreboard = {
+    hd: v => `<div class="hd">${badge(v, .9375)}${nameIn(v.u)}</div>`,
+    ln: (k, val, cls = '', extra = '') => `<div class="ln${extra}"><span>${k}</span><b class="${cls}">${val}</b></div>`,
+    elo: v => scoreboard.ln(cfg.tier ? tierName(v) : v.unrated ? 'Placements' : 'Elo', v.elo, 'ev'),
+    sess: v => scoreboard.ln(`Session ${v.sess.rec}`, signed(v.sess.elo), signCls(v.sess.elo), ' ' + hit),
+    match(m) {
+      const b = bits(m);
+      return `<div class="ln"><span><i class="${m.res}">${letter(m)}</i> ${b.head}${b.opp}${b.oe !== '' ? ` <em>${b.oe}</em>` : ''}${b.seeds ? ' ' + b.seeds : ''}</span>
+        <span>${b.time ? `<em>${b.time}${m.ff ? ' FF' : ''}</em> ` : ''}${b.ago ? `<em>${b.ago}</em> ` : ''}<b class="${signCls(m.change)}">${signed(m.change)}</b></span></div>`;
+    },
+    card(v) {
+      const ln = scoreboard.ln;
+      let h = scoreboard.hd(v) + scoreboard.elo(v);
+      if (v.rank) h += ln('Rank', v.rank);
+      if (v.peak) h += ln('Peak', v.peak);
+      if (v.prog && v.tier.next) h += v.tier.goal && !v.tier.toNext ? ln(`${v.tier.next} reached`, '') : ln(`To ${v.tier.next}`, num(v.tier.toNext));
+      h += v.stats.map(([k, x]) => ln(k, x)).join('');
+      if (v.sess) h += scoreboard.sess(v);
+      if (cfg.matches > 0 && v.list.length) h += '<div class="gap"></div>' + v.list.map(scoreboard.match).join('');
+      return shell('card ssc', h, v);
+    },
+    bar(v) {
+      let h = scoreboard.hd(v) + `<span>${cfg.tier ? tierName(v) : 'Elo'} <b class="ev">${v.elo}</b></span>`;
+      if (v.rank) h += `<span>Rank <b>${v.rank}</b></span>`;
+      if (v.peak) h += `<span>Peak <b>${v.peak}</b></span>`;
+      h += v.stats.map(([k, x]) => `<span>${k} <b>${x}</b></span>`).join('');
+      if (v.sess) h += `<span class="${hit}">Session <b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b></span>`;
+      if (v.list.length) h += `<span>${letters(v.list)}</span>`;
+      return shell('bar ssc', h, v);
+    },
+    compact(v) {
+      let h = scoreboard.hd(v) + scoreboard.elo(v);
+      if (cfg.rotate > 0) h += `<div class="ln"><span>${underLine(v)}</span></div>`;
+      else if (v.sess) h += scoreboard.sess(v);
+      return shell('compact ssc', h, v);
+    },
+    matches(v) {
+      const list = (state.matches || []).slice(0, cfg.matches || 5);
+      let h = scoreboard.hd(v) + scoreboard.elo(v) + (v.sess ? scoreboard.sess(v) : '');
+      h += '<div class="gap"></div>' + (list.length ? list.map(scoreboard.match).join('') : '<div class="ln"><span>No ranked matches yet</span></div>');
+      return shell('card list ssc', h, v);
+    },
+  };
+
+  // F3: the debug screen
+  const f3 = {
+    ln: (h, cls = '') => `<div class="ln${cls ? ' ' + cls : ''}">${h}</div>`,
+    top: v => `<div class="hd">${f3.ln(`${badge(v, .9375)} ${nameIn(v.u)} (${cfg.tier ? v.tier.name + '/' : ''}ranked)`)}</div>`,
+    elo: v => {
+      const extra = [v.rank, v.peak && 'peak ' + v.peak].filter(Boolean).join(', ');
+      return f3.ln(`Elo: <span class="ev">${v.elo}</span>${extra ? ` (${extra})` : ''}`);
+    },
+    next: v => f3.ln(`${v.tier.goal ? 'Goal' : 'Next'}: ${!v.tier.next ? 'top tier' : v.tier.goal && !v.tier.toNext ? v.tier.next + ' reached' : `${num(v.tier.toNext)} elo to ${v.tier.next}`}`),
+    sess: v => f3.ln(`Session: ${sgn(v.sess.elo)} (${v.sess.rec})`, hit),
+    match(m) {
+      const b = bits(m);
+      return f3.ln(`<span class="${resCls(m)}">${letter(m)}</span> ${b.head}${b.opp}${b.oe !== '' ? ` (${b.oe})` : ''}${b.seeds ? ' ' + b.seeds : ''}${b.time ? ' ' + b.time : ''}${m.ff ? ' FF' : ''}${b.ago ? ` ${b.ago} ago` : ''} ${sgn(m.change)}`);
+    },
+    card(v) {
+      let h = f3.top(v) + f3.elo(v) + (v.prog ? f3.next(v) : '');
+      if (v.stats.length || v.sess) h += '<div class="gap"></div>' + v.stats.map(([k, x]) => f3.ln(`${k}: ${x}`)).join('') + (v.sess ? f3.sess(v) : '');
+      if (cfg.matches > 0 && v.list.length) h += '<div class="gap"></div>' + f3.ln('<span class="u">Recent matches</span>') + v.list.map(f3.match).join('');
+      return shell('card sf3', h, v);
+    },
+    bar(v) {
+      const parts = [`${badge(v, .9375)} ${nameIn(v.u)}`, `Elo: <span class="ev">${v.elo}</span>${cfg.tier ? ` (${v.tier.name})` : ''}`];
+      if (v.rank) parts.push(`Rank: ${v.rank}`);
+      if (v.peak) parts.push(`Peak: ${v.peak}`);
+      v.stats.forEach(([k, x]) => parts.push(`${k}: ${x}`));
+      if (v.sess) parts.push(`<span class="${hit}">Session: ${sgn(v.sess.elo)}</span>`);
+      if (v.list.length) parts.push(`Last: ${letters(v.list)}`);
+      return shell('bar sf3', `<div class="hd">${f3.ln(parts.map(p => `<span class="pt">${p}</span>`).join(''))}</div>`, v);
+    },
+    compact(v) {
+      let h = f3.top(v) + f3.elo(v);
+      if (cfg.rotate > 0) h += f3.ln(underLine(v));
+      else if (v.sess) h += f3.sess(v);
+      return shell('compact sf3', h, v);
+    },
+    matches(v) {
+      const list = (state.matches || []).slice(0, cfg.matches || 5);
+      let h = f3.top(v) + f3.elo(v) + (v.sess ? f3.sess(v) : '') + '<div class="gap"></div>';
+      h += list.length ? list.map(f3.match).join('') : f3.ln('No ranked matches yet');
+      return shell('card list sf3', h, v);
+    },
+  };
+
+  // chat: what you'd see in game, newest message at the bottom
+  const chat = {
+    ln: (h, cls = '') => `<div class="ln${cls ? ' ' + cls : ''}">${h}</div>`,
+    tag: (t, c = 'gold') => `<span class="c-${c}">[${t}]</span>`,
+    me(v) {
+      const head = cfg.avatar ? `<img class="mini" src="${headSrc(v.u)}" alt="" onerror="this.remove()"> ` : '';
+      const flag = cfg.flag && v.u.country ? ` <img class="flag" src="https://flagcdn.com/w40/${esc(v.u.country.toLowerCase())}.png" alt="" onerror="this.remove()">` : '';
+      return `${head}&lt;${esc(cfg.label || v.u.nickname)}&gt;${flag}`;
+    },
+    head: v => `<div class="hd">${chat.ln(`${chat.me(v)} ${cfg.tier ? `${badge(v, .9375)} <span class="tier">${v.tier.name}</span> · ` : ''}<span class="ev">${v.elo}</span> elo${v.rank ? ' · ' + v.rank : ''}`)}</div>`,
+    rank(v) {
+      const parts = [v.peak && `Peak <span class="c-aqua">${v.peak}</span>`, v.prog && nextTxt(v)].filter(Boolean);
+      return parts.length ? chat.ln(`${chat.tag('Rank')} ${parts.join(' · ')}`) : '';
+    },
+    sess: v => chat.ln(`${chat.tag('Session', 'yellow')} ${sgn(v.sess.elo)} elo · ${v.sess.rec}`, hit),
+    match(m) {
+      const b = bits(m);
+      const what = m.res === 'win' ? '<span class="pos">Won</span> vs' : m.res === 'loss' ? '<span class="neg">Lost</span> to' : '<span class="zero">Draw</span> vs';
+      return chat.ln(`${b.ago ? `<span class="c-gray">[${b.ago}]</span> ` : ''}${chat.tag('Ranked')} ${what} ${b.head}${b.opp}${b.oe !== '' ? ` <span class="c-gray">(${b.oe})</span>` : ''}`
+        + `${m.res === 'win' && b.time ? ` in ${b.time}` : ''}${m.ff ? ' <span class="c-gray">(forfeit)</span>' : ''}${b.seeds ? ' ' + b.seeds : ''} ${sgn(m.change)}`);
+    },
+    card(v) {
+      let h = chat.head(v) + chat.rank(v);
+      if (v.stats.length) h += chat.ln(`${chat.tag('Stats')} ${v.stats.map(([k, x]) => `${k} <span class="c-aqua">${x}</span>`).join(' · ')}`);
+      if (v.sess) h += chat.sess(v);
+      if (cfg.matches > 0) h += v.list.slice().reverse().map(chat.match).join('');
+      return shell('card sch', h, v);
+    },
+    bar(v) {
+      const parts = [`${cfg.tier ? `${badge(v, .9375)} <span class="tier">${v.tier.name}</span> · ` : ''}<span class="ev">${v.elo}</span> elo`];
+      if (v.peak) parts.push(`peak <span class="c-aqua">${v.peak}</span>`);
+      v.stats.forEach(([k, x]) => parts.push(`${k} <span class="c-aqua">${x}</span>`));
+      if (v.sess) parts.push(`<span class="${hit}">session ${sgn(v.sess.elo)}</span>`);
+      if (v.list.length) parts.push(letters(v.list));
+      return shell('bar sch', `<div class="hd">${chat.ln(`${chat.me(v)} ${parts.join(' · ')}`)}</div>`, v);
+    },
+    compact(v) {
+      let h = chat.head(v);
+      if (cfg.rotate > 0) h += chat.ln(`${chat.tag('MCSR')} ${underLine(v)}`);
+      else if (v.sess) h += chat.sess(v);
+      return shell('compact sch', h, v);
+    },
+    matches(v) {
+      const list = (state.matches || []).slice(0, cfg.matches || 5);
+      let h = chat.head(v) + (v.sess ? chat.sess(v) : '');
+      h += list.length ? list.slice().reverse().map(chat.match).join('') : chat.ln(`${chat.tag('Ranked')} No ranked matches yet`);
+      return shell('card list sch', h, v);
+    },
+  };
+
+  // advancement, inventory and MCSR Ranked dress up the clean layouts
+  const slotLead = (v, size) => { const l = lead(v, size); return l && `<span class="slot">${l}</span>`; };
+  const skin = (cls, o = {}) => ({
+    card: v => clean.card(v, Object.assign({ cls }, o)), bar: v => clean.bar(v, Object.assign({ cls }, o)),
+    compact: v => clean.compact(v, Object.assign({ cls }, o)), matches: v => clean.matches(v, Object.assign({ cls }, o)),
+  });
+  const advancement = skin('sad'), inventory = skin('sin', { lead: slotLead }), ranked = skin('srk');
+
+  // boss bar: the title over a notched bar that fills with your tier progress
+  const bossbar = {
+    bb: v => `<div class="bb"><i style="width:${pct100(v)}%"></i></div>`,
+    title: (v, extra = '') => `<div class="bt">${badge(v, .9375)} ${nameIn(v.u)}${cfg.tier ? ` <span class="tier">${v.tier.name}</span>` : ''}${extra}</div>`,
+    lines(v) {
+      let h = `<div class="ln"><span><b class="ev">${v.elo}</b> elo</span>${v.rank ? `<span>${v.rank}</span>` : ''}${v.peak ? `<span>Peak <b>${v.peak}</b></span>` : ''}</div>`;
+      if (v.prog) h += `<div class="ln"><span>${nextTxt(v)}</span></div>`;
+      for (let i = 0; i < v.stats.length; i += 2) h += `<div class="ln">${v.stats.slice(i, i + 2).map(([k, x]) => `<span>${k} <b>${x}</b></span>`).join('')}</div>`;
+      if (v.sess) h += `<div class="ln ${hit}"><span>Session ${sgn(v.sess.elo)} · ${v.sess.rec}</span></div>`;
+      return `<div class="lns">${h}</div>`;
+    },
+    card(v) {
+      const h = `<div class="hd">${bossbar.title(v)}${bossbar.bb(v)}</div>` + bossbar.lines(v) + (cfg.matches > 0 ? rowsHtml(v.list) : '');
+      return shell('card sbb', h, v);
+    },
+    bar(v) {
+      const parts = [`<b class="ev">${v.elo}</b> elo`];
+      if (v.rank) parts.push(v.rank);
+      if (v.peak) parts.push(`Peak <b>${v.peak}</b>`);
+      v.stats.forEach(([k, x]) => parts.push(`${k} <b>${x}</b>`));
+      if (v.sess) parts.push(`<span class="${hit}">Session ${sgn(v.sess.elo)}</span>`);
+      if (v.list.length) parts.push(letters(v.list));
+      return shell('bar sbb', `<div class="hd">${bossbar.title(v, ' · ' + parts.join(' · '))}${bossbar.bb(v)}</div>`, v);
+    },
+    compact(v) {
+      const under = cfg.rotate > 0 ? underLine(v) : `<b class="ev">${v.elo}</b> elo${v.sess ? ` · <span class="${hit}">${sgn(v.sess.elo)} session</span>` : ''}`;
+      return shell('compact sbb', `<div class="hd">${bossbar.title(v)}${bossbar.bb(v)}</div><div class="lns"><div class="ln"><span>${under}</span></div></div>`, v);
+    },
+    matches(v) {
+      const h = `<div class="hd">${bossbar.title(v, ` · <b class="ev">${v.elo}</b>`)}${bossbar.bb(v)}</div>` + rowsHtml((state.matches || []).slice(0, cfg.matches || 5));
+      return shell('card list sbb', h, v);
+    },
+  };
+
+  // XP: the elo is the green level number over the experience bar
+  const xp = {
+    lv: v => `<div class="xl"><div class="lv ev">${v.elo}</div><div class="xb"><i style="width:${pct100(v)}%"></i></div></div>`,
+    title: v => `<div class="xt">${badge(v, .9375)} ${nameIn(v.u)}${cfg.tier ? ` <span class="tier">${v.tier.name}</span>` : ''}</div>`,
+    card(v) {
+      let ls = '';
+      if (v.rank || v.peak) ls += `<div class="ln">${v.rank ? `<span>${v.rank}</span>` : ''}${v.peak ? `<span>Peak <b>${v.peak}</b></span>` : ''}</div>`;
+      if (v.prog) ls += `<div class="ln"><span>${nextTxt(v)}</span></div>`;
+      for (let i = 0; i < v.stats.length; i += 2) ls += `<div class="ln">${v.stats.slice(i, i + 2).map(([k, x]) => `<span>${k} <b>${x}</b></span>`).join('')}</div>`;
+      if (v.sess) ls += `<div class="ln ${hit}"><span>Session ${sgn(v.sess.elo)} · ${v.sess.rec}</span></div>`;
+      const h = `<div class="hd">${xp.title(v)}${xp.lv(v)}</div>` + (ls ? `<div class="lns">${ls}</div>` : '') + (cfg.matches > 0 ? rowsHtml(v.list) : '');
+      return shell('card sxp', h, v);
+    },
+    bar(v) {
+      let h = `<div class="who">${xp.title(v)}</div>${xp.lv(v)}`;
+      if (v.rank) h += kv('Rank', v.rank);
+      if (v.peak) h += kv('Peak', v.peak);
+      h += v.stats.map(([k, x]) => kv(k, x)).join('');
+      if (v.sess) h += `<div class="kv ${hit}"><b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b><span>Session</span></div>`;
+      if (v.list.length) h += `<div class="kv"><b>${letters(v.list)}</b><span>Last ${v.list.length}</span></div>`;
+      return shell('bar sxp', h, v);
+    },
+    compact(v) {
+      const under = cfg.rotate > 0 ? underLine(v) : v.sess ? `<span class="${hit}">Session ${sgn(v.sess.elo)} · ${v.sess.rec}</span>` : '';
+      return shell('compact sxp', `<div class="hd">${xp.title(v)}${xp.lv(v)}</div>${under ? `<div class="lns"><div class="ln"><span>${under}</span></div></div>` : ''}`, v);
+    },
+    matches(v) {
+      return shell('card list sxp', `<div class="hd">${xp.title(v)}${xp.lv(v)}</div>` + rowsHtml((state.matches || []).slice(0, cfg.matches || 5)), v);
+    },
+  };
+
+  // buttons: the game menu, one stone button per line, the elo one hovered
+  const buttons = {
+    b: (h, cls = '') => `<div class="btn${cls ? ' ' + cls : ''}">${h}</div>`,
+    row: (...xs) => `<div class="brow">${xs.filter(Boolean).join('')}</div>`,
+    name: v => buttons.b(`${badge(v, .9375)}${nameIn(v.u)}`, 'hd'),
+    elo: v => buttons.b(`${cfg.tier ? tierName(v) : ''}<span class="ev">${v.elo}</span>`, 'hov'),
+    sess: v => buttons.b(`<span>Session ${sgn(v.sess.elo)} · ${v.sess.rec}</span>`, hit),
+    slider: v => `<div class="btn sl"><span class="knob" style="left:calc(.5rem + (100% - 1rem) * ${v.tier.pct.toFixed(3)})"></span><span>${nextTxt(v)}</span></div>`,
+    card(v) {
+      let h = buttons.name(v) + buttons.row(buttons.elo(v), (v.rank || v.peak) && buttons.b(join(v.rank, v.peak && 'Peak ' + v.peak)));
+      if (v.prog) h += buttons.slider(v);
+      h += v.stats.map(([k, x]) => buttons.b(`<span>${k} ${x}</span>`)).join('');
+      if (v.sess) h += buttons.sess(v);
+      if (cfg.matches > 0 && v.list.length) h += rowsHtml(v.list);
+      return shell('card sbt', h, v);
+    },
+    bar(v) {
+      let h = buttons.name(v) + buttons.elo(v);
+      if (v.rank) h += buttons.b(v.rank);
+      if (v.peak) h += buttons.b('Peak ' + v.peak);
+      h += v.stats.map(([k, x]) => buttons.b(`<span>${k} ${x}</span>`)).join('');
+      if (v.sess) h += buttons.b(`Session ${sgn(v.sess.elo)}`, hit);
+      if (v.list.length) h += buttons.b(letters(v.list));
+      return shell('bar sbt', h, v);
+    },
+    compact(v) {
+      const second = cfg.rotate > 0 ? buttons.b(underLine(v)) : v.sess ? buttons.b(`Session ${sgn(v.sess.elo)}`, hit) : '';
+      return shell('compact sbt', buttons.name(v) + buttons.row(buttons.elo(v), second), v);
+    },
+    matches(v) {
+      const h = buttons.name(v) + buttons.row(buttons.elo(v), v.sess && buttons.b(`Session ${sgn(v.sess.elo)}`, hit)) + rowsHtml((state.matches || []).slice(0, cfg.matches || 5));
+      return shell('card list sbt', h, v);
+    },
+  };
+
+  const STYLES = { badge: badgeStyle, tooltip, banner, clean, scoreboard, f3, chat, advancement, inventory, bossbar, xp, buttons, ranked };
 
   // ---------- render ----------
   let lastHtml = '';
   function render() {
     const root = $('#root');
     let html;
-    if (!cfg.u) {
+    if (!cfg.u && !cfg.demo) {
       html = msgCard('MCSR Ranked overlay', 'Add <code>?u=YourName</code> to the URL, or open index.html to customize.');
     } else if (!state.user) {
       const nf = state.error && state.error.status === 400;
@@ -899,21 +1421,35 @@
     notify({ type: 'mcsr:size', w: Math.ceil(r.width) + 20, h: Math.ceil(r.height) + 20 });
   }
   if (embedded && window.ResizeObserver) new ResizeObserver(reportSize).observe($('#root'));
+  if (embedded && document.fonts) document.fonts.ready.then(reportSize);
 
   window.addEventListener('message', e => {
     const d = e.data;
     if (!d || typeof d !== 'object') return;
     if (d.type === 'mcsr:config') {
-      const prevUser = cfg.u.toLowerCase();
+      const prevUser = cfg.u.toLowerCase(), prevDemo = cfg.demo;
       cfg = normalize(d.cfg || {});
       applyTheme();
       setupRotate();
-      if (cfg.u.toLowerCase() !== prevUser) restart();
+      if (cfg.u.toLowerCase() !== prevUser || cfg.demo !== prevDemo) restart();
       else render();
     } else if (d.type === 'mcsr:test-popup' && state.matches && state.matches[0]) {
       showToast(state.matches[0]);
+    } else if (d.type === 'mcsr:simulate') {
+      simulate(['win', 'loss', 'draw'].includes(d.res) ? d.res : 'win');
+    } else if (d.type === 'mcsr:simulate-clear') {
+      restart();
+    } else if (d.type === 'mcsr:data' && cfg.demo && d.user) {
+      // the customizer's style previews show your own profile, fetched once by the main preview
+      state.user = d.user;
+      state.matches = d.matches || [];
+      state.primed = true;
+      render();
     }
   });
+
+  // A demo opened on its own plays a match every so often.
+  if (cfg.demo && !embedded) setInterval(() => simulate(Math.random() < .62 ? 'win' : 'loss'), 14000);
 
   // Double-click the session (in OBS: right-click the source → Interact) to start a new one.
   document.addEventListener('dblclick', e => {
