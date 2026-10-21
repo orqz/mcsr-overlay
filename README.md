@@ -16,7 +16,7 @@ Stream overlays for [MCSR Ranked](https://mcsrranked.com): your rank badge, elo,
 
 ## Styles
 
-Thirteen styles, and every one works in all four layouts. Four are broadcast graphics; the other nine are built from Minecraft's own screens, in Minecraft's colors, font and text shadow.
+Thirteen styles, and every one works in all four layouts. Four are broadcast graphics; the other nine are built from Minecraft's own screens, in Minecraft's colors, font and text shadow. Every style can also show [the run you're in](#live-run-in-every-style).
 
 <p align="center"><img src="assets/styles.png" width="900" alt="All 13 styles in the compact layout, each on a Minecraft scene"></p>
 
@@ -91,6 +91,12 @@ The live part needs a small helper that reads the files [SpeedRunIGT](https://gi
 
 Other params: `bga` sets panel opacity (0–100, default 84), `live=0` shows stats only, and `demo` plays a fake run so you can see every animation (`demo=40` is faster). Without the helper, the HUD still shows your stats. `python3 live/mcsr-live.py --dump` prints what the helper sees right now.
 
+### Live run in every style
+
+The overlay's 13 styles show the same live run as the HUD, each in its own way: a row with the track in the panel styles, a line per split in Scoreboard, `Run:` lines in F3, a `[Run]` message per split in Chat, a second boss bar that fills toward your next split in Boss bar, and a slider in Buttons. Each split also gets a popup, and PB pace lights up gold (a light around the panel, or the frame in the framed Minecraft styles).
+
+Turn on **Live run** in the customizer. The URL it gives you points at the helper, `http://127.0.0.1:7477/overlay.html?u=YourName&style=…&run=1`, for the same reason as the HUD: OBS won't let a page on github.io read `127.0.0.1`. The size it shows leaves room for the run, so the source doesn't need resizing mid-run. Both the HUD and the overlay grade splits with `live.js`, so they always agree.
+
 ## Options
 
 All of these are in the customizer; each is also a URL param on `overlay.html`, e.g. `overlay.html?u=orq2&style=scoreboard&layout=matches`.
@@ -100,6 +106,7 @@ All of these are in the customizer; each is also a URL param on `overlay.html`, 
 - **Session:** session elo, session time, session streak, new-match popup, idle reset (`reset`, hours)
 - **Progress:** rank goal (`goal=Diamond I`, or an elo number), rotating info line in compact (`rotate`, seconds)
 - **Look:** display name (`label`), size and scale, width, align/anchor, font, color palettes (including Nether and End), background/text/muted/accent/border/win/loss colors, opacity, fill (solid/gradient), texture (grid/dots/noise), corners, border, shadows
+- **Live run:** `run=1` shows the run you're in, read from the helper (on by default when the helper serves the overlay, `run=0` turns it off), `runpop=0` turns off the split popups, `rundemo=20` plays a made-up run at 20× instead
 - **Demo:** `demo` shows a made-up Diamond II player with mobs for opponents, no API calls, and plays a match every 14 seconds. `demo=1850` picks the elo. Handy for trying a style in OBS before you've played ranked.
 
 ## OBS setup
@@ -117,7 +124,8 @@ Data comes from the public MCSR Ranked API and refreshes every 30s by default. T
 | `index.html` | The customizer |
 | `overlay.html` | The overlay; every option is a URL param |
 | `hud.html` | The live HUD |
-| `live/mcsr-live.py` | The helper that feeds the HUD your runs and serves it on 127.0.0.1:7477 |
+| `live.js` | The live run, shared by the HUD and the overlay: reads the helper, grades every split, plays the demo run |
+| `live/mcsr-live.py` | The helper that reads your runs and serves the HUD and overlay on 127.0.0.1:7477 |
 | `scene.js` | The pixel-art scenes behind the customizer's preview |
 | `assets/` | The images in this README |
 

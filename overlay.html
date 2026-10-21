@@ -19,6 +19,8 @@
   }
   /* sized by its content, so the size reported to the customizer is the real one */
   #root { flex: none; width: max-content; }
+  /* the same overlay mid-run, laid out but never shown, so the customizer can size the source for it */
+  #ghost { position: absolute; left: 0; top: 0; width: max-content; padding: 10px; visibility: hidden; pointer-events: none; }
   body.a-center { align-items: center; }
   body.a-right { align-items: flex-end; }
   body.v-bottom { justify-content: flex-end; }
@@ -374,6 +376,97 @@
   .srk .track { height: .375rem; border-radius: 0; background: #27393b; }
   .srk .stat b { font-size: 1rem; }
 
+  /* ---------- live run: your splits from live/mcsr-live.py, graded against your past runs ---------- */
+  :root { --best: #ffc94d; --great: #34e39a; --good: #9be36b; --okay: #b7c2d6; --slow: #ff9a4d; --live: #4fe3ff; }
+  .mc, .stt { --best: #ffaa00; --great: #55ff55; --good: #aaff55; --okay: #aaaaaa; --slow: #ff5555; --live: #55ffff; }
+  .gold { color: var(--best); font-style: normal; }
+  .rh { display: flex; align-items: baseline; gap: .375rem; white-space: nowrap; }
+  .rph { font-size: .6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .rtm { font-size: .9375rem; font-weight: 600; }
+  .rd { align-self: center; padding: .0625rem .3125rem; border-radius: .25rem; font-size: .6875rem; font-weight: 700; font-style: normal; line-height: 1.3;
+    color: var(--vc); background: color-mix(in srgb, var(--vc) 16%, transparent); text-shadow: none; }
+  .rx, .rpb { margin-left: auto; padding-left: .75rem; font-size: .6875rem; color: var(--muted); }
+  .rpb { font-weight: 600; color: var(--best); }
+  /* the track: a dot per split, the gap ahead fills toward your average for the next one */
+  .rt { display: flex; align-items: center; margin-top: .5rem; }
+  body.tshadow .rt { filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.6)); }
+  .rs { flex: 1 1 0; height: 2px; margin: 0 .1875rem; border-radius: 1px; background: var(--track); overflow: hidden; }
+  .rs i { display: block; width: 0; height: 100%; background: var(--live); transition: width .3s linear; }
+  .rs[data-fill] i { width: calc(var(--rf, 0) * 100%); }
+  .rs.done i { width: 100%; background: var(--faint); transition: none; }
+  .rs.late i { background: var(--slow); }
+  .rn { position: relative; flex: none; width: .5rem; height: .5rem; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--faint); }
+  .rn.fin { border-radius: 1px; transform: rotate(45deg); }
+  .rn.hit { background: var(--vc); box-shadow: 0 0 .375rem color-mix(in srgb, var(--vc) 60%, transparent); }
+  .rn.next { box-shadow: inset 0 0 0 1.5px var(--live); animation: breathe 2.4s ease-in-out infinite; }
+  .rn.next.late { box-shadow: inset 0 0 0 1.5px var(--slow); animation: none; }
+  .rn.pop { animation: pop .65s cubic-bezier(.3, 1.7, .5, 1); }
+  .rn.fin.pop { animation-name: popFin; }
+  @keyframes breathe { 50% { box-shadow: inset 0 0 0 1.5px var(--live), 0 0 .5rem color-mix(in srgb, var(--live) 60%, transparent); } }
+  @keyframes pop { 0% { transform: scale(.2); } }
+  @keyframes popFin { 0% { transform: rotate(45deg) scale(.2); } }
+  .compact .run { margin-top: .5rem; }
+  .compact .run .rt { margin-top: .375rem; }
+  /* a run never makes Compact wider (the OBS source stays put); what doesn't fit wraps */
+  .compact .run, .compact .rbb { width: 0; min-width: 100%; }
+  .compact .rh { flex-wrap: wrap; }
+  .compact .rbb .bt { white-space: normal; }
+  .bar .krun b { display: flex; align-items: center; gap: .375rem; }
+  .bar > .rt { flex: none; width: 8rem; margin: 0; align-self: center; }
+  .sbn.bar > .krun { align-self: center; }
+  .sb.card:not(.list) .run { width: 100%; max-width: 15rem; }
+  .sb.card:not(.list) .rh { justify-content: center; flex-wrap: wrap; }
+  .sb.card:not(.list) .rx, .sb.card:not(.list) .rpb { width: 100%; margin: .125rem 0 0; padding: 0; text-align: center; }
+  .sbn.compact .body { padding: 0 var(--sp-in) var(--sp-in); }
+  .sbn .body > .run:first-child { margin-top: var(--sp-in); }
+  /* PB pace: a gold light runs around the panel; the framed Minecraft styles turn their frame gold */
+  @property --ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+  .ov.pbpace:not(.mc)::before { content: ''; position: absolute; inset: 0; z-index: 3; border-radius: inherit; padding: 1.5px; pointer-events: none;
+    background: conic-gradient(from var(--ang), transparent 0 62%, color-mix(in srgb, var(--best) 15%, transparent) 72%, var(--best) 86%, transparent 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: spin 3.2s linear infinite; }
+  body.nopanel .ov.pbpace::before { display: none; }
+  @keyframes spin { to { --ang: 360deg; } }
+  .mc.ringed.pbpace { --ring: var(--best); }
+  /* Minecraft: plain colored text, a pixel track */
+  .mc .rh { flex-wrap: wrap; }
+  .mc .rph { font-size: 1rem; letter-spacing: 0; text-transform: none; }
+  .mc .rtm, .mc .rx, .mc .rpb { font-size: 1rem; }
+  .mc .rd, .stt .rd { padding: 0; border-radius: 0; background: none; font-size: inherit; line-height: inherit; }
+  .mc .rt, .stt .rt { margin-top: .375rem; }
+  .mc .rs, .stt .rs { height: .25rem; margin: 0; border-radius: 0; background: rgba(0,0,0,.5); }
+  .mc .rs.done i, .stt .rs.done i { background: var(--muted); }
+  .mc .rn, .stt .rn { width: .625rem; height: .625rem; border-radius: 0; box-shadow: inset 0 0 0 .125rem var(--muted); }
+  .mc .rn.fin, .stt .rn.fin { transform: none; }
+  .mc .rn.fin.pop, .stt .rn.fin.pop { animation-name: pop; }
+  .mc .rn.hit, .stt .rn.hit { box-shadow: inset 0 0 0 .125rem rgba(0,0,0,.3); }
+  .mc .rn.next, .stt .rn.next { box-shadow: inset 0 0 0 .125rem var(--live); animation: blink 1s steps(1) infinite; }
+  .mc .rn.next.late, .stt .rn.next.late { box-shadow: inset 0 0 0 .125rem var(--slow); animation: none; }
+  @keyframes blink { 50% { box-shadow: inset 0 0 0 .125rem transparent; } }
+  .sad .rs { background: #000; }
+  .srk .rph { text-transform: uppercase; }
+  .srk .rs { height: .375rem; background: #27393b; }
+  /* inventory: the run sits in a sunken slot, white text like the stats */
+  .sin .run { padding: .375rem .5rem .5rem; background: #8b8b8b; box-shadow: inset .125rem .125rem 0 #373737, inset -.125rem -.125rem 0 #fff; }
+  .sin .run .rph { color: #3f3f3f; }
+  .sin .run .rtm, .sin .run .rx { color: #fff; }
+  .sin .run .rtm, .sin .run .rx, .sin .run .rd, .sin .run .rpb { text-shadow: .125rem .125rem 0 #3f3f3f; }
+  .sin .run .rs { background: #373737; }
+  /* boss bar: a second bar under the first, filling toward your next split */
+  .rbb { margin-top: .5rem; }
+  .rbb .bt { white-space: nowrap; }
+  .bb.live { background: rgba(0,0,0,.55); }
+  @supports (color: color-mix(in srgb, red, blue)) { .bb.live { background: color-mix(in srgb, var(--live) 22%, #0a0a0a); } }
+  .bb.live i { width: calc(var(--rf, 0) * 100%); background: var(--live); transition: width .3s linear; }
+  .bb.live.late i { background: var(--slow); }
+  .sxp .run { margin-top: .5rem; }
+  .sxp .run .ln { justify-content: space-between; }
+  /* buttons: the run's own buttons, and a slider that slides toward your next split */
+  .btn.gold { color: var(--best); }
+  .rrow > .btn:first-child { flex: none; }
+  .sbt.bar .btn.sl.run { min-width: 14rem; }
+  .btn.sl.run .knob { left: calc(.5rem + (100% - 1rem) * var(--rf, 0)); transition: left .3s linear; }
+  .btn.sl.run.late .knob { box-shadow: inset .125rem .125rem 0 rgba(255,255,255,.28), inset -.125rem -.1875rem 0 rgba(0,0,0,.3), 0 0 0 .125rem var(--slow); }
+
   /* messages */
   .msg .mt { font-size: .875rem; font-weight: 600; }
   .msg .mb { margin-top: .25rem; font-size: .75rem; line-height: 1.45; color: var(--muted); white-space: normal; }
@@ -387,6 +480,7 @@
   .hd, .lh, .bar > * { transition: opacity .2s ease; }
   .toasting .hd, .toasting .lh, .bar.toasting > :not(.toast) { opacity: 0; }
   .toast.win { --tc: var(--win); } .toast.loss { --tc: var(--loss); } .toast.draw { --tc: var(--muted); }
+  .toast.gold { background-image: linear-gradient(100deg, color-mix(in srgb, var(--best) 22%, transparent), transparent 65%); }
   .toast.enter { animation: tin .3s cubic-bezier(.2,.7,.2,1) both; }
   .toast.leave { animation: tout .3s ease-in both; }
   .tk { font-size: .9375rem; font-weight: 700; color: var(--tc); }
@@ -403,6 +497,8 @@
 </head>
 <body>
 <div id="root"></div>
+<div id="ghost" aria-hidden="true"></div>
+<script src="live.js"></script>
 <script>
 (() => {
   'use strict';
@@ -423,6 +519,7 @@
     font: 'rubik', bg: '000000', bga: 0, text: 'ffffff', win: '4ade80', loss: 'f87171',
     scale: 100, width: 320, radius: 8, border: false, shadow: false, tshadow: true,
     refresh: 30,
+    run: false, runpop: true,
   };
 
   // Each style brings its own look; any of these can still be overridden by a URL param.
@@ -499,6 +596,8 @@
   };
 
   // ---------- helpers ----------
+  // served by live/mcsr-live.py (the only way OBS lets the overlay read 127.0.0.1)
+  const LOCAL = /^(127\.0\.0\.1|localhost|\[::1\])$/.test(location.hostname);
   const isHex = s => /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(s));
   const $ = (s, el = document) => el.querySelector(s);
   const pad = n => String(n).padStart(2, '0');
@@ -565,6 +664,9 @@
     // ?demo shows a made-up player instead of calling the API; ?demo=1850 picks their elo
     c.demo = raw.demo !== undefined && raw.demo !== null && !/^(0|false|off|no)$/i.test(String(raw.demo))
       ? (parseFloat(raw.demo) >= 100 ? parseFloat(raw.demo) : 1) : 0;
+    // the live run is on by default when the helper serves this page; ?rundemo=20 plays a made-up run at 20×
+    if (raw.run === undefined || raw.run === null || raw.run === '') c.run = LOCAL;
+    c.rundemo = Math.max(0, parseFloat(raw.rundemo) || 0);
     return c;
   }
 
@@ -606,7 +708,7 @@
       st.textContent = `@font-face { font-family: '${f[0]}'; src: url(${f[2]}) format('truetype'); font-display: swap; }`;
       document.head.appendChild(st);
     }
-    document.body.className = [`a-${cfg.align}`, `v-${cfg.valign}`, `st-${cfg.style}`, MC_STYLES.includes(cfg.style) && 'mc', cfg.tshadow && 'tshadow'].filter(Boolean).join(' ');
+    document.body.className = [`a-${cfg.align}`, `v-${cfg.valign}`, `st-${cfg.style}`, MC_STYLES.includes(cfg.style) && 'mc', cfg.tshadow && 'tshadow', !cfg.bga && 'nopanel'].filter(Boolean).join(' ');
   }
 
   // Stone speckle for the button style: a 16×16 tile of slightly lighter and darker pixels.
@@ -704,7 +806,8 @@
   }
 
   // ---------- polling ----------
-  const state = { user: null, matches: null, key: null, primed: false, error: null, timer: null, gen: 0, shownElo: null, toast: null, toastTimer: null, rot: 0, rotTimer: null };
+  const state = { user: null, matches: null, key: null, primed: false, error: null, timer: null, gen: 0, polling: false, soon: null, shownElo: null,
+    toast: null, toastQ: [], toastTimer: null, rot: 0, rotTimer: null };
 
   // Compact can cycle its second line through session, rank, peak and stats.
   function setupRotate() {
@@ -715,7 +818,7 @@
   function restart() {
     clearTimeout(state.timer);
     clearTimeout(state.toastTimer);
-    Object.assign(state, { user: null, matches: null, key: null, primed: false, error: null, gen: state.gen + 1, shownElo: null, toast: null, sim: null });
+    Object.assign(state, { user: null, matches: null, key: null, primed: false, error: null, gen: state.gen + 1, polling: false, soon: null, shownElo: null, toast: null, toastQ: [], sim: null });
     render();
     poll();
   }
@@ -726,13 +829,13 @@
     ['Golem', 'MHF_Golem'], ['Skeleton', 'MHF_Skeleton'], ['Ghast', 'MHF_Ghast'], ['Zombie', 'MHF_Zombie'], ['Alex', 'MHF_Alex']];
   const OVERWORLDS = ['VILLAGE', 'SHIPWRECK', 'BURIED_TREASURE', 'DESERT_TEMPLE', 'RUINED_PORTAL'], BASTIONS = ['TREASURE', 'BRIDGE', 'HOUSING', 'STABLES'];
   let simN = 0;
-  function fakeMatch(res, secondsAgo) {
+  function fakeMatch(res, secondsAgo, time) {
     const i = simN++, [opp, head] = MOBS[i % MOBS.length];
     const elo = state.user && state.user.eloRate != null ? state.user.eloRate : 1712;
     const ow = OVERWORLDS[i % OVERWORLDS.length], bt = BASTIONS[(i * 3) % BASTIONS.length];
     return {
       id: `sim${i}-${Date.now()}`, date: Date.now() / 1000 - (secondsAgo || 0), res, opp, oppUuid: head, oppElo: elo + (i * 37) % 120 - 60,
-      time: res === 'draw' ? null : 540000 + (i * 7919) % 300000, ff: res === 'loss' && i % 4 === 3,
+      time: time != null ? time : res === 'draw' ? null : 540000 + (i * 7919) % 300000, ff: res === 'loss' && i % 4 === 3 && time == null,
       change: res === 'win' ? 9 + (i * 5) % 9 : res === 'loss' ? -(8 + (i * 3) % 9) : 0,
       seedType: ow, bastion: bt, seed: titleCase(ow) + ' · ' + titleCase(bt),
     };
@@ -752,15 +855,15 @@
     state.primed = true;
   }
   // A made-up result on top of whatever's showing (preview and demo only, nothing is saved).
-  function simulate(res) {
+  function simulate(res, time) {
     if (!state.user) return;
-    const m = fakeMatch(res, 0);
+    const m = fakeMatch(res, 0, time);
     state.sim = state.sim || { elo: 0, matches: [] };
     state.sim.elo += m.change;
     state.sim.matches.unshift(m);
     if (state.user.eloRate != null) state.user = Object.assign({}, state.user, { eloRate: state.user.eloRate + m.change });
     state.matches = [m].concat(state.matches || []);
-    if (cfg.popup) showToast(m);
+    if (cfg.popup) showToast(matchToast(m));
     render();
   }
 
@@ -775,6 +878,7 @@
     if (!cfg.u) return render();
     const gen = state.gen;
     let delay = cfg.refresh * 1000;
+    state.polling = true;
     try {
       let user = await api('/users/' + encodeURIComponent(cfg.u));
       if (gen !== state.gen) return;
@@ -787,7 +891,7 @@
         if (gen !== state.gen) return;
         const parsed = list.filter(m => !m.decayed).map(m => parseMatch(m, user.uuid));
         const prevTop = state.matches && state.matches[0] ? state.matches[0].id : null;
-        if (state.primed && cfg.popup && parsed[0] && parsed[0].id !== prevTop) showToast(parsed[0]);
+        if (state.primed && cfg.popup && parsed[0] && parsed[0].id !== prevTop) showToast(matchToast(parsed[0]));
         state.matches = state.sim ? state.sim.matches.concat(parsed) : parsed;
         state.key = key;
         state.primed = true;
@@ -804,14 +908,80 @@
       else if (!state.user) delay = Math.min(delay, 15000);
       notify({ type: 'mcsr:status', ok: false, notFound: e.status === 400, error: e.message });
     }
+    state.polling = false;
+    if (state.soon != null) { delay = Math.min(delay, state.soon); state.soon = null; }
     render();
     state.timer = setTimeout(poll, delay);
+  }
+  // After a run, ask for the new elo sooner than the usual refresh.
+  function pollSoon(ms) {
+    if (cfg.demo || !cfg.u) return;
+    if (state.polling) { state.soon = ms; return; }
+    clearTimeout(state.timer);
+    state.timer = setTimeout(poll, ms);
+  }
+
+  // ---------- live run (live.js reads live/mcsr-live.py) ----------
+  const LV = window.MCSRLive;
+  const vcOf = v => `var(--${LV.VERDICTS[v][1]})`;
+  // how a split compares: with your average, or with your PB at the finish
+  const delta = (j, ref) => j.key === 'finish' ? (ref.pb ? j.t - ref.pb.time : null) : j.avg != null ? j.t - j.avg : null;
+  let live = null, liveKey = '';
+
+  function setupLive() {
+    const key = !LV ? '' : cfg.rundemo ? 'demo' + cfg.rundemo : cfg.run ? 'live' : '';
+    if (key === liveKey) return;
+    liveKey = key;
+    if (live) live.stop();
+    live = !key ? null : LV.create({
+      url: LOCAL ? '/api/live' : 'http://127.0.0.1:7477/api/live',
+      demo: cfg.rundemo,
+      onSplit: (j, ref, pb) => { if (cfg.runpop) showToast(splitToast(j, ref, pb)); },
+      onMatch: m => {
+        if (cfg.runpop) showToast({ k: m.type === 'RANKED' ? 'Ranked' : 'Match', color: 'var(--live)', dur: 5000,
+          v: `vs <b>${esc(m.opponent)}</b>${m.opponentElo != null ? ` · ${m.opponentElo} elo` : ''}` });
+      },
+      onEnd: () => { pollSoon(4000); setTimeout(() => pollSoon(1000), 15000); },
+      // the made-up run ends in a win
+      onDemoEnd: time => setTimeout(() => simulate('win', time), 3000),
+      onChange: render,
+    }).start();
+    render();
+  }
+
+  // What the styles show about the run you're in; null when you're not in one.
+  function runView(x) {
+    if (!x || !x.on) return null;
+    const j = x.recent, d = j ? delta(j, x.ref) : null;
+    return {
+      x, j, ref: x.ref,
+      phase: LV.NAMES[j ? j.key : ''],
+      t: j ? fmtTime(j.t) : '',
+      d: d == null ? '' : LV.fmtD(d),
+      vc: j ? vcOf(j.v) : 'var(--live)',
+      word: j && j.v !== 'none' ? LV.VERDICTS[j.v][0] : '',
+      next: x.nextKey ? (x.nextKey === 'finish' ? 'Finish' : LV.NAMES[x.nextKey]) : '',
+      avg: x.target != null ? fmtTime(x.target) : '',
+      pb: x.pb != null ? LV.fmtD(x.pb) : '',
+      done: LV.SPLITS.map(k => x.judged[k]).filter(Boolean).sort((a, b) => a.t - b.t),
+    };
+  }
+
+  // How far toward the next split and whether you're late change every frame, so they're set here instead of rebuilding the overlay.
+  function tickRun() {
+    if (!live) return;
+    const x = live.view();
+    document.querySelectorAll('#root [data-fill]').forEach(el => {
+      el.style.setProperty('--rf', x.fill.toFixed(4));
+      el.classList.toggle('late', x.late);
+    });
   }
 
   // ---------- shared pieces ----------
   function shell(cls, inner, v) {
     const framed = FRAMED.includes(cfg.style);
-    const c = ['ov', cls, MC_STYLES.includes(cfg.style) && 'mc', cfg.border && (framed ? 'ringed' : 'bordered'), cfg.shadow && 'shadowed'].filter(Boolean).join(' ');
+    const c = ['ov', cls, MC_STYLES.includes(cfg.style) && 'mc', cfg.border && (framed ? 'ringed' : 'bordered'), cfg.shadow && 'shadowed',
+      v && v.run && v.run.pb && 'pbpace'].filter(Boolean).join(' ');
     const col = v && (isHex(cfg.accent) ? '#' + cfg.accent.replace('#', '') : v.tier.color);
     // Netherite gets the purple "challenge" title in the advancement style
     const style = v ? `--tier:${col};--tier-soft:${rgba(rgb(col), .1)}${v.tier.name === 'Netherite' ? ';--adv:#ff55ff' : ''}` : '';
@@ -836,6 +1006,7 @@
       stats: statList(s),
       sess: cfg.session ? sessionOf() : null,
       list: (state.matches || []).slice(0, cfg.matches),
+      run: null,
     };
   }
 
@@ -891,6 +1062,31 @@
   }
   const rowsHtml = list => list.length ? `<ul class="ml">${list.map(matchRow).join('')}</ul>` : '<div class="empty">No ranked matches yet</div>';
 
+  // The live run, for the styles that draw it as a panel row (r is runView(): null outside a run)
+  const rd = r => r.d ? `<i class="rd" style="--vc:${r.vc}">${r.d}</i>` : '';
+  const rdTxt = r => r.d ? ` <span style="color:${r.vc}">${r.d}</span>` : '';
+  const rnext = r => r.next ? r.next + (r.avg ? ' avg ' + r.avg : '') : '';
+  const where = r => r.phase + (r.t ? ' ' + r.t : '');
+  // a dot per split, each gap as long as that part of the run usually takes
+  function runTrack(r) {
+    const x = r.x, ref = r.ref;
+    let prev = 0;
+    return '<div class="rt">' + LV.SPLITS.map((k, i) => {
+      const med = ref.splits && ref.splits[k] ? ref.splits[k].median : null;
+      const grow = med == null ? 1.5 : Math.max(.6, Math.min(6, (med - prev) / 60000));
+      if (med != null) prev = Math.max(prev, med);
+      const j = x.judged[k], nx = i === x.nextIdx ? ' data-fill' : '';
+      const pop = j && j.at && Date.now() - j.at < 1200 ? ' pop' : '';
+      return `<span class="rs${j ? ' done' : ''}" style="flex-grow:${grow.toFixed(2)}"${nx}><i></i></span>`
+        + `<span class="rn${k === 'finish' ? ' fin' : ''}${j ? ' hit' : ''}${nx ? ' next' : ''}${pop}"${j ? ` style="--vc:${vcOf(j.v)}"` : ''}${nx}></span>`;
+    }).join('') + '</div>';
+  }
+  // where you are, the last split and how it went, then PB pace or what's next, over the track
+  const runSec = (r, cls = 'sec') => !r ? '' : `<div class="${cls} run"><div class="rh"><span class="rph">${r.phase}</span>${r.t ? `<b class="rtm">${r.t}</b>` : ''}${rd(r)}`
+    + (r.pb ? `<span class="rpb">PB pace ${r.pb}</span>` : r.next ? `<span class="rx">${rnext(r)}</span>` : '') + `</div>${runTrack(r)}</div>`;
+  // bar layouts: the time and how it went over where you are, then a short track
+  const runKv = r => !r ? '' : `<div class="kv krun"><b>${r.t || '—'}${rd(r)}</b><span>${r.phase}${r.pb ? ` · <i class="gold">PB pace ${r.pb}</i>` : ''}</span></div>${runTrack(r)}`;
+
   function matchRow(m) {
     const oppElo = cfg.oppelo && m.oppElo != null ? `<em>${m.oppElo}</em>` : '';
     const head = cfg.heads && m.oppUuid ? `<img class="mini opp" src="https://mc-heads.net/avatar/${m.oppUuid}/32" alt="" onerror="this.remove()">` : '';
@@ -917,6 +1113,7 @@
         <div class="who">${nameHtml(v.u)}${cfg.tier ? `<div class="sub">${tierSub(v)}</div>` : ''}</div>
         <div class="elo"><div class="ev">${v.elo}</div><div class="el">${under || (v.unrated ? 'placements' : 'elo')}</div></div></div>`;
       if (v.prog) h += `<div class="prog">${trackHtml(v)}<div class="pm"><span>${v.peak ? `Peak <b>${v.peak}</b>` : v.tier.name}</span><span>${nextTxt(v)}</span></div></div>`;
+      h += runSec(v.run);
       if (v.stats.length) {
         const cols = v.stats.length === 4 ? 2 : Math.min(3, v.stats.length);
         h += `<div class="sec stats" style="grid-template-columns:repeat(${cols},1fr)">` +
@@ -934,6 +1131,7 @@
       h += v.stats.map(([k, x]) => kv(k, x)).join('');
       if (v.sess) h += '<div class="vr"></div>' + `<div class="kv ${hit}"><b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b><span>Session ${v.sess.rec}</span></div>`;
       if (v.list.length) h += '<div class="vr"></div>' + `<div class="kv">${deltas(v.list)}<span>Last ${v.list.length}</span></div>`;
+      if (v.run) h += '<div class="vr"></div>' + runKv(v.run);
       if (v.prog) h += trackHtml(v, 'btrack');
       return shell('bar' + (o.cls ? ' ' + o.cls : ''), h, v);
     },
@@ -942,13 +1140,14 @@
       const under = underLine(v);
       let h = `<div class="hd">${(o.lead || lead)(v, 1.875)}<div class="who">${nameHtml(v.u)}${sub ? `<div class="sub">${sub}</div>` : ''}</div>
         <div class="elo"><div class="ev">${v.elo}</div><div class="el">${under}</div></div></div>`;
+      h += runSec(v.run, 'rc');
       if (v.prog) h += trackHtml(v, 'btrack');
       return shell('compact' + (o.cls ? ' ' + o.cls : ''), h, v);
     },
     matches(v, o = {}) {
       let h = `<div class="lh">${o.lead ? o.lead(v, .9375) : badge(v, .9375)}${nameHtml(v.u)}<span class="muted">${v.unrated ? 'placements' : v.elo + ' elo'}</span>`;
       if (v.sess) h += `<span class="ls ${hit}">Session<b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b></span>`;
-      h += `</div><div class="sec">${rowsHtml((state.matches || []).slice(0, cfg.matches || 5))}</div>`;
+      h += `</div>${runSec(v.run)}<div class="sec">${rowsHtml((state.matches || []).slice(0, cfg.matches || 5))}</div>`;
       return shell('card list' + (o.cls ? ' ' + o.cls : ''), h, v);
     },
   };
@@ -959,6 +1158,7 @@
       let h = `<div class="hd">${badge(v, 2.8125)}${nameHtml(v.u, true)}<div class="tl">${join(tierName(v), `<b class="ev">${v.elo}</b>`)}</div>
         ${v.rank || v.peak ? `<div class="meta">${join(v.rank, v.peak && 'Peak ' + v.peak)}</div>` : ''}</div>`;
       if (v.prog) h += `<div class="prog">${trackHtml(v)}<div class="pm"><span>${nextTxt(v)}</span></div></div>`;
+      h += runSec(v.run, 'rb');
       if (v.stats.length) h += `<div class="kvs">${v.stats.map(([k, x]) => kv(k, x)).join('')}</div>`;
       if (v.sess) h += `<div class="sess ${hit}">Session <b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b> · ${v.sess.rec}</div>`;
       if (v.list.length) h += squares(v.list);
@@ -971,6 +1171,7 @@
       h += v.stats.map(([k, x]) => kv(k, x)).join('');
       if (v.sess) h += '<div class="vr"></div>' + `<div class="kv ${hit}"><b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b><span>Session ${v.sess.rec}</span></div>`;
       if (v.list.length) h += '<div class="vr"></div>' + squares(v.list);
+      if (v.run) h += '<div class="vr"></div>' + runKv(v.run);
       if (v.prog) h += trackHtml(v, 'btrack');
       return shell('bar sb', h, v);
     },
@@ -978,12 +1179,12 @@
       const under = underLine(v);
       const h = `<div class="hd">${badge(v, 2.8125)}<div class="who">${nameHtml(v.u, true)}<div class="tl">${join(tierName(v), v.rank)}</div></div>
         <div class="elo"><div class="ev">${v.elo}</div><div class="el">${under}</div></div></div>`;
-      return shell('compact sb', h, v);
+      return shell('compact sb', h + runSec(v.run, 'rc'), v);
     },
     matches(v) {
       let h = `<div class="lh">${badge(v, 1.875)}${nameHtml(v.u, true)}<span class="muted">${v.unrated ? 'placements' : v.elo + ' elo'}</span>`;
       if (v.sess) h += `<span class="ls ${hit}">Session<b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b></span>`;
-      h += `</div><div class="sec">${rowsHtml((state.matches || []).slice(0, cfg.matches || 5))}</div>`;
+      h += `</div>${runSec(v.run)}<div class="sec">${rowsHtml((state.matches || []).slice(0, cfg.matches || 5))}</div>`;
       return shell('card list sb', h, v);
     },
   };
@@ -993,12 +1194,21 @@
     head(v, size, extra = '') {
       return `<div class="hd">${badge(v, size)}<div class="who">${nameHtml(v.u, true)}<div class="tl">${join(cfg.tier && v.tier.name, `<b class="ev">${v.elo}</b> elo`)}</div>${extra}</div></div>`;
     },
+    // the run as lore lines: where you are and how it went, then PB pace or what's next
+    run(r) {
+      if (!r) return '';
+      let h = `<div class="ln"><span>${where(r)}</span>${r.d ? `<b style="color:${r.vc}">${r.d}</b>` : ''}</div>`;
+      if (r.pb) h += `<div class="ln"><span style="color:var(--best)">PB pace</span><b style="color:var(--best)">${r.pb}</b></div>`;
+      else if (r.next) h += `<div class="ln"><span>${r.next}</span>${r.avg ? `<b style="color:var(--muted)">avg ${r.avg}</b>` : ''}</div>`;
+      return `<div class="blk run">${h}${runTrack(r)}</div>`;
+    },
     card(v) {
       let h = tooltip.head(v, 2.8125);
       const lines = [];
       if (v.rank || v.peak) lines.push(`<div class="ln"><span>${join(v.rank, v.peak && 'Peak ' + v.peak)}</span></div>`);
       if (v.prog) lines.push(`<div class="ln"><span>${v.tier.goal ? 'Goal' : 'Next'}: ${v.tier.next || 'top tier'}</span>${v.tier.next ? `<b>${v.tier.toNext ? num(v.tier.toNext) + ' elo' : 'reached'}</b>` : ''}</div>`);
       if (lines.length) h += `<div class="blk">${lines.join('')}</div>`;
+      h += tooltip.run(v.run);
       if (v.stats.length) h += `<div class="blk">${v.stats.map(([k, x]) => `<div class="ln"><span>${k}</span><b>${x}</b></div>`).join('')}</div>`;
       if (v.sess) h += `<div class="blk"><div class="ln ${hit}"><span>Session · ${v.sess.rec}</span><b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b></div></div>`;
       if (cfg.matches > 0) h += `<div class="sec">${rowsHtml(v.list)}</div>`;
@@ -1011,14 +1221,15 @@
       h += v.stats.map(([k, x]) => kv(k, x)).join('');
       if (v.sess) h += `<div class="kv ${hit}"><b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b><span>Session ${v.sess.rec}</span></div>`;
       if (v.list.length) h += `<div class="kv">${deltas(v.list)}<span>Last ${v.list.length}</span></div>`;
+      h += runKv(v.run);
       return shell('bar stt', h, v);
     },
     compact(v) {
       const sess = v.sess || cfg.rotate > 0 ? `<div class="tl">${underLine(v)}</div>` : '';
-      return shell('compact stt', tooltip.head(v, 1.875, sess), v);
+      return shell('compact stt', tooltip.head(v, 1.875, sess) + tooltip.run(v.run), v);
     },
     matches(v) {
-      let h = tooltip.head(v, 1.875);
+      let h = tooltip.head(v, 1.875) + tooltip.run(v.run);
       h += `<div class="sec">${rowsHtml((state.matches || []).slice(0, cfg.matches || 5))}</div>`;
       if (v.sess) h += `<div class="blk"><div class="ln ${hit}"><span>Session · ${v.sess.rec}</span><b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b></div></div>`;
       return shell('card list stt', h, v);
@@ -1034,6 +1245,7 @@
       let h = `<div class="hd">${banner.tile(v, 3.75, true)}<div class="who">${nameHtml(v.u, true)}
         <div class="sub">${join(`<b class="ev">${v.elo}</b> elo`, v.rank)}</div></div></div><div class="body">`;
       if (v.prog) h += `<div class="sec prog">${trackHtml(v)}<div class="pm"><span>${v.peak ? `Peak <b>${v.peak}</b>` : v.tier.name}</span><span>${nextTxt(v)}</span></div></div>`;
+      h += runSec(v.run);
       if (v.stats.length) {
         const cols = v.stats.length === 4 ? 2 : Math.min(3, v.stats.length);
         h += `<div class="sec stats" style="grid-template-columns:repeat(${cols},1fr)">${v.stats.map(([k, x]) => kv2(k, x)).join('')}</div>`;
@@ -1051,18 +1263,19 @@
       h += v.stats.map(([k, x]) => kv2(k, x)).join('');
       if (v.sess) h += `<div class="kv2 ${hit}"><span class="lab">Session ${v.sess.rec}</span><b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b></div>`;
       if (v.list.length) h += squares(v.list);
+      h += runKv(v.run);
       return shell('bar sbn', h, v);
     },
     compact(v) {
       const under = underLine(v);
       const h = `<div class="hd">${banner.tile(v, 2.8125, false)}<div class="who">${nameHtml(v.u, true)}<div class="sub">${join(tierName(v), v.rank)}</div></div>
         <div class="elo"><div class="ev">${v.elo}</div><div class="el">${under}</div></div></div>`;
-      return shell('compact sbn', h, v);
+      return shell('compact sbn', h + (v.run ? `<div class="body">${runSec(v.run, 'rc')}</div>` : ''), v);
     },
     matches(v) {
       let h = `<div class="hd">${banner.tile(v, 1.875, false)}<div class="who">${nameHtml(v.u, true)}<span class="muted">${v.elo} elo</span>`;
       if (v.sess) h += `<span class="ls ${hit}">Session<b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b></span>`;
-      h += `</div></div><div class="rows">${rowsHtml((state.matches || []).slice(0, cfg.matches || 5))}</div>`;
+      h += `</div></div>${v.run ? `<div class="body">${runSec(v.run)}</div>` : ''}<div class="rows">${rowsHtml((state.matches || []).slice(0, cfg.matches || 5))}</div>`;
       return shell('card list sbn', h, v);
     },
   };
@@ -1100,6 +1313,18 @@
       return `<div class="ln"><span><i class="${m.res}">${letter(m)}</i> ${b.head}${b.opp}${b.oe !== '' ? ` <em>${b.oe}</em>` : ''}${b.seeds ? ' ' + b.seeds : ''}</span>
         <span>${b.time ? `<em>${b.time}${m.ff ? ' FF' : ''}</em> ` : ''}${b.ago ? `<em>${b.ago}</em> ` : ''}<b class="${signCls(m.change)}">${signed(m.change)}</b></span></div>`;
     },
+    // a line per split (or just the latest), scored by how it went, then PB pace or the next split's average
+    run(v, all) {
+      const r = v.run;
+      if (!r) return '';
+      let h = (all ? r.done : r.done.slice(-1)).map(j => {
+        const d = delta(j, r.ref);
+        return `<div class="ln"><span>${LV.NAMES[j.key]}${d != null ? ` <em>${fmtTime(j.t)}</em>` : ''}</span><b style="color:${vcOf(j.v)}">${d != null ? LV.fmtD(d) : fmtTime(j.t)}</b></div>`;
+      }).join('');
+      if (r.pb) h += `<div class="ln"><span>PB pace</span><b style="color:var(--best)">${r.pb}</b></div>`;
+      else if (r.next) h += `<div class="ln"><em>${r.next}${r.avg ? ' avg' : ''}</em><b style="color:var(--muted)">${r.avg}</b></div>`;
+      return '<div class="gap"></div>' + h;
+    },
     card(v) {
       const ln = scoreboard.ln;
       let h = scoreboard.hd(v) + scoreboard.elo(v);
@@ -1108,6 +1333,7 @@
       if (v.prog && v.tier.next) h += v.tier.goal && !v.tier.toNext ? ln(`${v.tier.next} reached`, '') : ln(`To ${v.tier.next}`, num(v.tier.toNext));
       h += v.stats.map(([k, x]) => ln(k, x)).join('');
       if (v.sess) h += scoreboard.sess(v);
+      h += scoreboard.run(v, true);
       if (cfg.matches > 0 && v.list.length) h += '<div class="gap"></div>' + v.list.map(scoreboard.match).join('');
       return shell('card ssc', h, v);
     },
@@ -1118,17 +1344,19 @@
       h += v.stats.map(([k, x]) => `<span>${k} <b>${x}</b></span>`).join('');
       if (v.sess) h += `<span class="${hit}">Session <b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b></span>`;
       if (v.list.length) h += `<span>${letters(v.list)}</span>`;
+      const r = v.run;
+      if (r) h += `<span>${where(r)}${r.d ? ` <b style="color:${r.vc}">${r.d}</b>` : ''}</span>` + (r.pb ? `<span>PB pace <b style="color:var(--best)">${r.pb}</b></span>` : '');
       return shell('bar ssc', h, v);
     },
     compact(v) {
       let h = scoreboard.hd(v) + scoreboard.elo(v);
       if (cfg.rotate > 0) h += `<div class="ln"><span>${underLine(v)}</span></div>`;
       else if (v.sess) h += scoreboard.sess(v);
-      return shell('compact ssc', h, v);
+      return shell('compact ssc', h + scoreboard.run(v, false), v);
     },
     matches(v) {
       const list = (state.matches || []).slice(0, cfg.matches || 5);
-      let h = scoreboard.hd(v) + scoreboard.elo(v) + (v.sess ? scoreboard.sess(v) : '');
+      let h = scoreboard.hd(v) + scoreboard.elo(v) + (v.sess ? scoreboard.sess(v) : '') + scoreboard.run(v, false);
       h += '<div class="gap"></div>' + (list.length ? list.map(scoreboard.match).join('') : '<div class="ln"><span>No ranked matches yet</span></div>');
       return shell('card list ssc', h, v);
     },
@@ -1148,9 +1376,18 @@
       const b = bits(m);
       return f3.ln(`<span class="${resCls(m)}">${letter(m)}</span> ${b.head}${b.opp}${b.oe !== '' ? ` (${b.oe})` : ''}${b.seeds ? ' ' + b.seeds : ''}${b.time ? ' ' + b.time : ''}${m.ff ? ' FF' : ''}${b.ago ? ` ${b.ago} ago` : ''} ${sgn(m.change)}`);
     },
+    run(v, gap) {
+      const r = v.run;
+      if (!r) return '';
+      let h = f3.ln(`Run: ${where(r)}${r.d ? ` (<span style="color:${r.vc}">${r.d}</span>${r.word ? ', ' + r.word.toLowerCase() : ''})` : ''}`);
+      if (r.pb) h += f3.ln(`PB pace: <span style="color:var(--best)">${r.pb}</span>`);
+      if (r.next) h += f3.ln(`Next: ${r.next}${r.avg ? ` (avg ${r.avg})` : ''}`);
+      return (gap ? '<div class="gap"></div>' : '') + h;
+    },
     card(v) {
       let h = f3.top(v) + f3.elo(v) + (v.prog ? f3.next(v) : '');
       if (v.stats.length || v.sess) h += '<div class="gap"></div>' + v.stats.map(([k, x]) => f3.ln(`${k}: ${x}`)).join('') + (v.sess ? f3.sess(v) : '');
+      h += f3.run(v, true);
       if (cfg.matches > 0 && v.list.length) h += '<div class="gap"></div>' + f3.ln('<span class="u">Recent matches</span>') + v.list.map(f3.match).join('');
       return shell('card sf3', h, v);
     },
@@ -1161,17 +1398,19 @@
       v.stats.forEach(([k, x]) => parts.push(`${k}: ${x}`));
       if (v.sess) parts.push(`<span class="${hit}">Session: ${sgn(v.sess.elo)}</span>`);
       if (v.list.length) parts.push(`Last: ${letters(v.list)}`);
+      if (v.run) parts.push(`Run: ${where(v.run)}${rdTxt(v.run)}`);
+      if (v.run && v.run.pb) parts.push(`PB pace: <span style="color:var(--best)">${v.run.pb}</span>`);
       return shell('bar sf3', `<div class="hd">${f3.ln(parts.map(p => `<span class="pt">${p}</span>`).join(''))}</div>`, v);
     },
     compact(v) {
       let h = f3.top(v) + f3.elo(v);
       if (cfg.rotate > 0) h += f3.ln(underLine(v));
       else if (v.sess) h += f3.sess(v);
-      return shell('compact sf3', h, v);
+      return shell('compact sf3', h + f3.run(v, false), v);
     },
     matches(v) {
       const list = (state.matches || []).slice(0, cfg.matches || 5);
-      let h = f3.top(v) + f3.elo(v) + (v.sess ? f3.sess(v) : '') + '<div class="gap"></div>';
+      let h = f3.top(v) + f3.elo(v) + (v.sess ? f3.sess(v) : '') + f3.run(v, false) + '<div class="gap"></div>';
       h += list.length ? list.map(f3.match).join('') : f3.ln('No ranked matches yet');
       return shell('card list sf3', h, v);
     },
@@ -1198,12 +1437,24 @@
       return chat.ln(`${b.ago ? `<span class="c-gray">[${b.ago}]</span> ` : ''}${chat.tag('Ranked')} ${what} ${b.head}${b.opp}${b.oe !== '' ? ` <span class="c-gray">(${b.oe})</span>` : ''}`
         + `${m.res === 'win' && b.time ? ` in ${b.time}` : ''}${m.ff ? ' <span class="c-gray">(forfeit)</span>' : ''}${b.seeds ? ' ' + b.seeds : ''} ${sgn(m.change)}`);
     },
+    // a message per split, newest at the bottom like everything else in chat
+    run(v, all) {
+      const r = v.run;
+      if (!r) return '';
+      const tag = chat.tag('Run', 'aqua');
+      if (!r.done.length) return chat.ln(`${tag} Started${r.next && r.avg ? ` <span class="c-gray">· ${r.next} avg ${r.avg}</span>` : ''}`);
+      return (all ? r.done : r.done.slice(-1)).map((j, i, list) => {
+        const d = delta(j, r.ref), last = i === list.length - 1;
+        return chat.ln(`${tag} ${j.key === 'finish' ? 'Finished in' : LV.NAMES[j.key]} ${fmtTime(j.t)}${d != null ? ` <span style="color:${vcOf(j.v)}">${LV.fmtD(d)}</span>` : ''}`
+          + `${j.v !== 'none' ? ` <span class="c-gray">${LV.VERDICTS[j.v][0]}</span>` : ''}${last && r.pb ? ` <span style="color:var(--best)">PB pace ${r.pb}</span>` : ''}`);
+      }).join('');
+    },
     card(v) {
       let h = chat.head(v) + chat.rank(v);
       if (v.stats.length) h += chat.ln(`${chat.tag('Stats')} ${v.stats.map(([k, x]) => `${k} <span class="c-aqua">${x}</span>`).join(' · ')}`);
       if (v.sess) h += chat.sess(v);
       if (cfg.matches > 0) h += v.list.slice().reverse().map(chat.match).join('');
-      return shell('card sch', h, v);
+      return shell('card sch', h + chat.run(v, true), v);
     },
     bar(v) {
       const parts = [`${cfg.tier ? `${badge(v, .9375)} <span class="tier">${v.tier.name}</span> · ` : ''}<span class="ev">${v.elo}</span> elo`];
@@ -1211,18 +1462,20 @@
       v.stats.forEach(([k, x]) => parts.push(`${k} <span class="c-aqua">${x}</span>`));
       if (v.sess) parts.push(`<span class="${hit}">session ${sgn(v.sess.elo)}</span>`);
       if (v.list.length) parts.push(letters(v.list));
+      if (v.run) parts.push(`${chat.tag('Run', 'aqua')} ${where(v.run)}${rdTxt(v.run)}${v.run.pb ? ` <span style="color:var(--best)">PB pace ${v.run.pb}</span>` : ''}`);
       return shell('bar sch', `<div class="hd">${chat.ln(`${chat.me(v)} ${parts.join(' · ')}`)}</div>`, v);
     },
     compact(v) {
       let h = chat.head(v);
       if (cfg.rotate > 0) h += chat.ln(`${chat.tag('MCSR')} ${underLine(v)}`);
       else if (v.sess) h += chat.sess(v);
-      return shell('compact sch', h, v);
+      return shell('compact sch', h + chat.run(v, false), v);
     },
     matches(v) {
       const list = (state.matches || []).slice(0, cfg.matches || 5);
       let h = chat.head(v) + (v.sess ? chat.sess(v) : '');
       h += list.length ? list.slice().reverse().map(chat.match).join('') : chat.ln(`${chat.tag('Ranked')} No ranked matches yet`);
+      h += chat.run(v, false);
       return shell('card list sch', h, v);
     },
   };
@@ -1246,8 +1499,16 @@
       if (v.sess) h += `<div class="ln ${hit}"><span>Session ${sgn(v.sess.elo)} · ${v.sess.rec}</span></div>`;
       return `<div class="lns">${h}</div>`;
     },
+    // a second boss bar under the first, like the game stacks them: where you are, filling toward the next split
+    run(v) {
+      const r = v.run;
+      if (!r) return '';
+      const tail = r.pb ? ` · <span style="color:var(--best)">PB pace ${r.pb}</span>` : r.next ? ` · ${r.next}` : '';
+      const fill = r.x.nextIdx >= 0 ? '<div class="bb live" data-fill><i></i></div>' : `<div class="bb live"><i style="width:100%;background:${r.vc}"></i></div>`;
+      return `<div class="rbb"><div class="bt">${where(r)}${rdTxt(r)}${tail}</div>${fill}</div>`;
+    },
     card(v) {
-      const h = `<div class="hd">${bossbar.title(v)}${bossbar.bb(v)}</div>` + bossbar.lines(v) + (cfg.matches > 0 ? rowsHtml(v.list) : '');
+      const h = `<div class="hd">${bossbar.title(v)}${bossbar.bb(v)}</div>` + bossbar.run(v) + bossbar.lines(v) + (cfg.matches > 0 ? rowsHtml(v.list) : '');
       return shell('card sbb', h, v);
     },
     bar(v) {
@@ -1257,14 +1518,14 @@
       v.stats.forEach(([k, x]) => parts.push(`${k} <b>${x}</b>`));
       if (v.sess) parts.push(`<span class="${hit}">Session ${sgn(v.sess.elo)}</span>`);
       if (v.list.length) parts.push(letters(v.list));
-      return shell('bar sbb', `<div class="hd">${bossbar.title(v, ' · ' + parts.join(' · '))}${bossbar.bb(v)}</div>`, v);
+      return shell('bar sbb', `<div class="hd">${bossbar.title(v, ' · ' + parts.join(' · '))}${bossbar.bb(v)}</div>` + bossbar.run(v), v);
     },
     compact(v) {
       const under = cfg.rotate > 0 ? underLine(v) : `<b class="ev">${v.elo}</b> elo${v.sess ? ` · <span class="${hit}">${sgn(v.sess.elo)} session</span>` : ''}`;
-      return shell('compact sbb', `<div class="hd">${bossbar.title(v)}${bossbar.bb(v)}</div><div class="lns"><div class="ln"><span>${under}</span></div></div>`, v);
+      return shell('compact sbb', `<div class="hd">${bossbar.title(v)}${bossbar.bb(v)}</div>${bossbar.run(v)}<div class="lns"><div class="ln"><span>${under}</span></div></div>`, v);
     },
     matches(v) {
-      const h = `<div class="hd">${bossbar.title(v, ` · <b class="ev">${v.elo}</b>`)}${bossbar.bb(v)}</div>` + rowsHtml((state.matches || []).slice(0, cfg.matches || 5));
+      const h = `<div class="hd">${bossbar.title(v, ` · <b class="ev">${v.elo}</b>`)}${bossbar.bb(v)}</div>` + bossbar.run(v) + rowsHtml((state.matches || []).slice(0, cfg.matches || 5));
       return shell('card list sbb', h, v);
     },
   };
@@ -1273,13 +1534,19 @@
   const xp = {
     lv: v => `<div class="xl"><div class="lv ev">${v.elo}</div><div class="xb"><i style="width:${pct100(v)}%"></i></div></div>`,
     title: v => `<div class="xt">${badge(v, .9375)} ${nameIn(v.u)}${cfg.tier ? ` <span class="tier">${v.tier.name}</span>` : ''}</div>`,
+    run(v) {
+      const r = v.run;
+      if (!r) return '';
+      const right = r.pb ? `<span style="color:var(--best)">PB pace ${r.pb}</span>` : r.next ? `<span>${rnext(r)}</span>` : '';
+      return `<div class="lns run"><div class="ln"><span>${r.phase}${r.t ? ` <b>${r.t}</b>` : ''}${rdTxt(r)}</span>${right}</div>${runTrack(r)}</div>`;
+    },
     card(v) {
       let ls = '';
       if (v.rank || v.peak) ls += `<div class="ln">${v.rank ? `<span>${v.rank}</span>` : ''}${v.peak ? `<span>Peak <b>${v.peak}</b></span>` : ''}</div>`;
       if (v.prog) ls += `<div class="ln"><span>${nextTxt(v)}</span></div>`;
       for (let i = 0; i < v.stats.length; i += 2) ls += `<div class="ln">${v.stats.slice(i, i + 2).map(([k, x]) => `<span>${k} <b>${x}</b></span>`).join('')}</div>`;
       if (v.sess) ls += `<div class="ln ${hit}"><span>Session ${sgn(v.sess.elo)} · ${v.sess.rec}</span></div>`;
-      const h = `<div class="hd">${xp.title(v)}${xp.lv(v)}</div>` + (ls ? `<div class="lns">${ls}</div>` : '') + (cfg.matches > 0 ? rowsHtml(v.list) : '');
+      const h = `<div class="hd">${xp.title(v)}${xp.lv(v)}</div>` + xp.run(v) + (ls ? `<div class="lns">${ls}</div>` : '') + (cfg.matches > 0 ? rowsHtml(v.list) : '');
       return shell('card sxp', h, v);
     },
     bar(v) {
@@ -1289,14 +1556,14 @@
       h += v.stats.map(([k, x]) => kv(k, x)).join('');
       if (v.sess) h += `<div class="kv ${hit}"><b class="${signCls(v.sess.elo)}">${signed(v.sess.elo)}</b><span>Session</span></div>`;
       if (v.list.length) h += `<div class="kv"><b>${letters(v.list)}</b><span>Last ${v.list.length}</span></div>`;
-      return shell('bar sxp', h, v);
+      return shell('bar sxp', h + runKv(v.run), v);
     },
     compact(v) {
       const under = cfg.rotate > 0 ? underLine(v) : v.sess ? `<span class="${hit}">Session ${sgn(v.sess.elo)} · ${v.sess.rec}</span>` : '';
-      return shell('compact sxp', `<div class="hd">${xp.title(v)}${xp.lv(v)}</div>${under ? `<div class="lns"><div class="ln"><span>${under}</span></div></div>` : ''}`, v);
+      return shell('compact sxp', `<div class="hd">${xp.title(v)}${xp.lv(v)}</div>${xp.run(v)}${under ? `<div class="lns"><div class="ln"><span>${under}</span></div></div>` : ''}`, v);
     },
     matches(v) {
-      return shell('card list sxp', `<div class="hd">${xp.title(v)}${xp.lv(v)}</div>` + rowsHtml((state.matches || []).slice(0, cfg.matches || 5)), v);
+      return shell('card list sxp', `<div class="hd">${xp.title(v)}${xp.lv(v)}</div>` + xp.run(v) + rowsHtml((state.matches || []).slice(0, cfg.matches || 5)), v);
     },
   };
 
@@ -1308,9 +1575,19 @@
     elo: v => buttons.b(`${cfg.tier ? tierName(v) : ''}<span class="ev">${v.elo}</span>`, 'hov'),
     sess: v => buttons.b(`<span>Session ${sgn(v.sess.elo)} · ${v.sess.rec}</span>`, hit),
     slider: v => `<div class="btn sl"><span class="knob" style="left:calc(.5rem + (100% - 1rem) * ${v.tier.pct.toFixed(3)})"></span><span>${nextTxt(v)}</span></div>`,
+    // where you are as a button, PB pace lit up next to it, and a slider whose knob slides toward the next split
+    run(v, inline) {
+      const r = v.run;
+      if (!r) return '';
+      const at = buttons.b(`<span>${where(r)}</span>${r.d ? `<span style="color:${r.vc}">${r.d}</span>` : ''}`);
+      const pb = r.pb && buttons.b(`PB pace ${r.pb}`, 'gold');
+      const sl = r.next ? `<div class="btn sl run" data-fill><span class="knob"></span><span>${rnext(r)}</span></div>` : '';
+      return inline ? at + (pb || '') + sl : `<div class="brow rrow">${at}${pb || ''}</div>${sl}`;
+    },
     card(v) {
       let h = buttons.name(v) + buttons.row(buttons.elo(v), (v.rank || v.peak) && buttons.b(join(v.rank, v.peak && 'Peak ' + v.peak)));
       if (v.prog) h += buttons.slider(v);
+      h += buttons.run(v);
       h += v.stats.map(([k, x]) => buttons.b(`<span>${k} ${x}</span>`)).join('');
       if (v.sess) h += buttons.sess(v);
       if (cfg.matches > 0 && v.list.length) h += rowsHtml(v.list);
@@ -1323,14 +1600,15 @@
       h += v.stats.map(([k, x]) => buttons.b(`<span>${k} ${x}</span>`)).join('');
       if (v.sess) h += buttons.b(`Session ${sgn(v.sess.elo)}`, hit);
       if (v.list.length) h += buttons.b(letters(v.list));
-      return shell('bar sbt', h, v);
+      return shell('bar sbt', h + buttons.run(v, true), v);
     },
     compact(v) {
       const second = cfg.rotate > 0 ? buttons.b(underLine(v)) : v.sess ? buttons.b(`Session ${sgn(v.sess.elo)}`, hit) : '';
-      return shell('compact sbt', buttons.name(v) + buttons.row(buttons.elo(v), second), v);
+      return shell('compact sbt', buttons.name(v) + buttons.row(buttons.elo(v), second) + buttons.run(v), v);
     },
     matches(v) {
-      const h = buttons.name(v) + buttons.row(buttons.elo(v), v.sess && buttons.b(`Session ${sgn(v.sess.elo)}`, hit)) + rowsHtml((state.matches || []).slice(0, cfg.matches || 5));
+      const h = buttons.name(v) + buttons.row(buttons.elo(v), v.sess && buttons.b(`Session ${sgn(v.sess.elo)}`, hit))
+        + buttons.run(v) + rowsHtml((state.matches || []).slice(0, cfg.matches || 5));
       return shell('card list sbt', h, v);
     },
   };
@@ -1338,10 +1616,10 @@
   const STYLES = { badge: badgeStyle, tooltip, banner, clean, scoreboard, f3, chat, advancement, inventory, bossbar, xp, buttons, ranked };
 
   // ---------- render ----------
-  let lastHtml = '';
+  let lastHtml = '', lastGhost = '';
   function render() {
     const root = $('#root');
-    let html;
+    let html, ghost = '';
     if (!cfg.u && !cfg.demo) {
       html = msgCard('MCSR Ranked overlay', 'Add <code>?u=YourName</code> to the URL, or open index.html to customize.');
     } else if (!state.user) {
@@ -1350,14 +1628,20 @@
         : nf ? msgCard('Player not found', `No ranked profile for “${esc(cfg.u)}”.`)
         : msgCard('Can’t reach MCSR Ranked', 'Retrying shortly.');
     } else {
-      const S = STYLES[cfg.style] || badgeStyle;
-      html = (S[cfg.layout] || S.card)(view(state.user, statsOf(state.user)));
+      const S = STYLES[cfg.style] || badgeStyle, draw = S[cfg.layout] || S.card;
+      const v = view(state.user, statsOf(state.user));
+      v.run = runView(live && live.view());
+      html = draw(v);
       if (state.error) html = html.replace(/<\/div>$/, `<div class="stale" title="${esc(state.error.message)}"></div></div>`);
+      // the customizer sizes the OBS source for the longest the run gets, not just what's showing now
+      if (embedded && live) ghost = draw(Object.assign({}, v, { run: runView(LV.sample()) }));
     }
 
+    if (ghost !== lastGhost) $('#ghost').innerHTML = lastGhost = ghost;
     if (html !== lastHtml) {
       lastHtml = html;
       root.innerHTML = html;
+      tickRun();
       const u = state.user, ev = $('.ev', root);
       if (u && ev && u.eloRate != null && state.shownElo != null && state.shownElo !== u.eloRate) {
         ev.classList.add(u.eloRate > state.shownElo ? 'up' : 'down');
@@ -1380,30 +1664,72 @@
     requestAnimationFrame(step);
   }
 
-  // ---------- popup ----------
-  function showToast(m) {
-    clearTimeout(state.toastTimer);
-    const old = $('.toast');
-    if (old) old.remove();
-    state.toast = { m, entered: false };
-    const ov = $('.ov');
-    if (ov && state.user) mountToast(ov);
-    state.toastTimer = setTimeout(() => {
-      const el = $('.toast');
-      if (el) { el.classList.remove('enter'); el.classList.add('leave'); el.parentNode.classList.remove('toasting'); }
-      state.toastTimer = setTimeout(() => { state.toast = null; const t = $('.toast'); if (t) t.remove(); }, 320);
-    }, 7000);
+  // ---------- popups: match results, splits, the opponent when a match starts ----------
+  // t: { k (headline), v (detail), c (big number), cls, color, gold, dur }
+  function showToast(t) {
+    state.toastQ.push(t);
+    if (state.toastQ.length > 3) state.toastQ.shift();
+    if (!state.toast) nextToast();
+    else hurryToast();
   }
-  function mountToast(ov) {
-    const m = state.toast.m;
-    const word = m.res === 'win' ? 'Win' : m.res === 'loss' ? 'Loss' : 'Draw';
+  function matchToast(m) {
     const detail = [`vs <b>${esc(m.opp)}</b>`];
     if (m.time != null) detail.push(fmtTime(m.time) + (m.ff ? ' FF' : ''));
-    ov.insertAdjacentHTML('beforeend', `<div class="toast ${m.res}${state.toast.entered ? '' : ' enter'}">
-      <span class="tk">${word}</span><span class="tv trunc">${detail.join(' · ')}</span>
-      <span class="tc">${m.change == null ? '' : signed(m.change)}</span></div>`);
-    state.toast.entered = true;
-    ov.classList.add('toasting');
+    return { cls: m.res, k: m.res === 'win' ? 'Win' : m.res === 'loss' ? 'Loss' : 'Draw', v: detail.join(' · '), c: m.change == null ? '' : signed(m.change) };
+  }
+  function splitToast(j, ref, pb) {
+    let k = LV.VERDICTS[j.v][0], v, c = '';
+    if (j.key === 'finish') {
+      v = `Finished <b>${fmtTime(j.t)}</b>`;
+      if (ref && ref.pb) c = LV.fmtD(j.t - ref.pb.time);
+      else k = 'First finish';
+    } else {
+      v = `${LV.NAMES[j.key]} <b>${fmtTime(j.t)}</b>`;
+      if (j.v === 'best') { k = `Best ${LV.SHORT[j.key]}`; c = LV.fmtD(j.t - j.best); }
+      else if (j.avg != null) c = LV.fmtD(j.t - j.avg);
+      if (pb != null) v += ` · PB pace ${LV.fmtD(pb)}`;
+    }
+    const gold = j.v === 'pb' || j.v === 'best';
+    return { k, v, c, color: vcOf(j.v), gold, dur: gold ? 7000 : 5500 };
+  }
+  function nextToast() {
+    clearTimeout(state.toastTimer);
+    const old = $('#root .toast');
+    if (old) old.remove();
+    const t = state.toastQ.shift();
+    state.toast = t ? Object.assign(t, { at: Date.now(), out: 0 }) : null;
+    if (!t) return;
+    const ov = $('#root .ov');
+    if (ov && state.user) mountToast(ov);
+    leaveIn(t.dur || 7000);
+  }
+  // one waiting behind this popup makes it shorter
+  function hurryToast() {
+    const t = state.toast;
+    if (t.out) return;
+    const left = t.at + (t.dur || 7000) - Date.now(), want = Math.max(0, t.at + 3200 - Date.now());
+    if (want < left) leaveIn(want);
+  }
+  function leaveIn(ms) {
+    clearTimeout(state.toastTimer);
+    state.toastTimer = setTimeout(() => {
+      if (!state.toast) return;
+      state.toast.out = Date.now();
+      const el = $('#root .toast');
+      if (el) { el.classList.remove('enter'); el.classList.add('leave'); el.parentNode.classList.remove('toasting'); }
+      state.toastTimer = setTimeout(nextToast, 320);
+    }, ms);
+  }
+  // A re-render rebuilds the overlay, so a popup that's sliding in or out picks up where it was.
+  function mountToast(ov) {
+    const t = state.toast, now = Date.now();
+    const cls = ['toast', t.cls, t.gold && 'gold'], st = [];
+    if (t.color) st.push(`--tc:${t.color}`);
+    if (t.out) { cls.push('leave'); st.push(`animation-delay:-${now - t.out}ms`); }
+    else if (now - t.at < 300) { cls.push('enter'); st.push(`animation-delay:-${now - t.at}ms`); }
+    ov.insertAdjacentHTML('beforeend', `<div class="${cls.filter(Boolean).join(' ')}"${st.length ? ` style="${st.join(';')}"` : ''}>
+      <span class="tk">${t.k}</span><span class="tv trunc">${t.v}</span><span class="tc">${t.c || ''}</span></div>`);
+    if (!t.out) ov.classList.add('toasting');
     const hd = $('.hd, .lh', ov);
     if (hd) $('.toast', ov).style.height = (hd.offsetTop * 2 + hd.offsetHeight) + 'px';
   }
@@ -1413,15 +1739,16 @@
   function notify(msg) { if (embedded) { try { parent.postMessage(msg, '*'); } catch (e) {} } }
   let lastSize = '';
   function reportSize() {
-    const ov = embedded && $('.ov');
-    if (!ov) return;
-    const r = ov.getBoundingClientRect();
-    const key = Math.ceil(r.width) + 'x' + Math.ceil(r.height);
+    const ovs = embedded ? [$('#root .ov'), $('#ghost .ov')].filter(Boolean) : [];
+    if (!ovs.length) return;
+    const rs = ovs.map(ov => ov.getBoundingClientRect());
+    const w = Math.ceil(Math.max(...rs.map(r => r.width))), h = Math.ceil(Math.max(...rs.map(r => r.height)));
+    const key = w + 'x' + h;
     if (key === lastSize) return;
     lastSize = key;
-    notify({ type: 'mcsr:size', w: Math.ceil(r.width) + 20, h: Math.ceil(r.height) + 20 });
+    notify({ type: 'mcsr:size', w: w + 20, h: h + 20 });
   }
-  if (embedded && window.ResizeObserver) new ResizeObserver(reportSize).observe($('#root'));
+  if (embedded && window.ResizeObserver) { const ro = new ResizeObserver(reportSize); ro.observe($('#root')); ro.observe($('#ghost')); }
   if (embedded && document.fonts) document.fonts.ready.then(reportSize);
 
   window.addEventListener('message', e => {
@@ -1432,10 +1759,14 @@
       cfg = normalize(d.cfg || {});
       applyTheme();
       setupRotate();
+      setupLive();
       if (cfg.u.toLowerCase() !== prevUser || cfg.demo !== prevDemo) restart();
       else render();
     } else if (d.type === 'mcsr:test-popup' && state.matches && state.matches[0]) {
-      showToast(state.matches[0]);
+      showToast(matchToast(state.matches[0]));
+    } else if (d.type === 'mcsr:run-replay') {
+      liveKey = '';
+      setupLive();
     } else if (d.type === 'mcsr:simulate') {
       simulate(['win', 'loss', 'draw'].includes(d.res) ? d.res : 'win');
     } else if (d.type === 'mcsr:simulate-clear') {
@@ -1449,8 +1780,8 @@
     }
   });
 
-  // A demo opened on its own plays a match every so often.
-  if (cfg.demo && !embedded) setInterval(() => simulate(Math.random() < .62 ? 'win' : 'loss'), 14000);
+  // A demo opened on its own plays a match every so often (with ?rundemo, one per made-up run instead).
+  if (cfg.demo && !embedded && !cfg.rundemo) setInterval(() => simulate(Math.random() < .62 ? 'win' : 'loss'), 14000);
 
   // Double-click the session (in OBS: right-click the source → Interact) to start a new one.
   document.addEventListener('dblclick', e => {
@@ -1462,6 +1793,8 @@
 
   applyTheme();
   setupRotate();
+  setupLive();
+  setInterval(tickRun, 250);
   render();
   poll();
   notify({ type: 'mcsr:ready', defaults: DEFAULTS, themes: STYLE_THEMES, sprite: SPRITE, tiers: TIER_COLORS });

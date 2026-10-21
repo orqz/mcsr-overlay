@@ -16,7 +16,7 @@
     --accent: #4fe3ff;
     --win: #4ade80; --loss: #f87171;
     /* pace verdicts */
-    --best: #ffc94d; --great: #34e39a; --good: #9be36b; --okay: #b7c2d6; --slow: #ff9a4d;
+    --best: #ffc94d; --great: #34e39a; --good: #9be36b; --okay: #b7c2d6; --slow: #ff9a4d; --live: var(--accent);
     --tier: #aaaaaa;
   }
   html { font-size: calc(16px * var(--s)); }
@@ -173,6 +173,7 @@
   </div>
   <div class="cos" id="cos"></div>
 </div>
+<script src="live.js"></script>
 <script>
 (() => {
   'use strict';
@@ -194,19 +195,10 @@
   document.documentElement.style.setProperty('--s', cfg.scale);
   document.documentElement.style.setProperty('--bga', cfg.bga);
 
-  // Order on the track. Bastion and fortress can swap; each is judged on its own.
-  const SPLITS = ['nether', 'bastion', 'fortress', 'blind', 'stronghold', 'end', 'finish'];
-  const NAMES = { '': 'Overworld', nether: 'Nether', bastion: 'Bastion', fortress: 'Fortress', blind: 'Blind', stronghold: 'Stronghold', end: 'The End', finish: 'Finished' };
-  const SHORT = { nether: 'nether', bastion: 'bastion', fortress: 'fortress', blind: 'blind', stronghold: 'stronghold', end: 'end' };
-  const VERDICTS = {
-    pb:    ['New PB', 'var(--best)'],
-    best:  ['Best ever', 'var(--best)'],
-    great: ['Great pace', 'var(--great)'],
-    good:  ['Good pace', 'var(--good)'],
-    okay:  ['Okay pace', 'var(--okay)'],
-    slow:  ['Slow pace', 'var(--slow)'],
-    none:  ['Split', 'var(--accent)'],
-  };
+  // The run itself (splits, verdicts, PB pace, the demo) comes from live.js, shared with the overlay.
+  const LV = window.MCSRLive;
+  const { SPLITS, NAMES, SHORT, VERDICTS } = LV;
+  const vcOf = v => `var(--${VERDICTS[v][1]})`;
 
   // MCSR Ranked's divisions, tier colors and badge sprite (6×3 icons)
   const DIVS = [
@@ -252,7 +244,7 @@
   const S = {
     user: null, matches: null, key: null, primed: false, err: null, timer: null, polling: false, soon: null,
     shownElo: null, shownTier: null, newestId: null, pbTime: null,
-    live: null, world: null, judged: {}, livePrimed: false, announced: null, pb: null, linger: 0, liveTimer: null,
+    live: null, pace: null, popKey: null,
     q: [], showing: false,
   };
 
@@ -374,7 +366,7 @@
 
     const season = (u.statistics || {}).season || {};
     S.pbTime = season.bestTime && season.bestTime.ranked;
-    paintPB(hud.classList.contains('pbpace'));
+    paintPB();
 
     const last = (S.matches || []).slice(0, 5).reverse();
     $('g-form').hidden = !last.length;
@@ -387,14 +379,15 @@
     S.newestId = newest;
   }
 
-  function paintPB(pace) {
-    pace = pace && !!S.pb;
+  // S.pace: how far ahead of your PB run you are, null when you're not on PB pace
+  function paintPB() {
+    const pace = S.pace != null;
     const k = $('pbk'), mode = pace ? 'pace' : 'pb';
     $('g-pb').hidden = !pace && !S.pbTime;
     if (k.dataset.mode && k.dataset.mode !== mode) { k.classList.remove('swap'); void k.offsetWidth; k.classList.add('swap'); }
     k.dataset.mode = mode;
     k.classList.toggle('pace', pace);
-    $('pbv').textContent = pace ? fmtD(S.pb.d) : fmt(S.pbTime);
+    $('pbv').textContent = pace ? fmtD(S.pace) : fmt(S.pbTime);
     $('pbl').textContent = pace ? 'PB pace' : 'PB';
   }
 
@@ -416,63 +409,10 @@
     setTimeout(() => f.remove(), 2300);
   }
 
-  // ---------- live run (from live/mcsr-live.py) ----------
-  function judge(key, t, ref) {
-    const r = ref && ref.splits && ref.splits[key];
+  // ---------- live run (live.js reads live/mcsr-live.py) ----------
+  function onSplit(j, ref, pb) {
+    const [word] = VERDICTS[j.v], vc = vcOf(j.v);
     const pbRun = ref && ref.pb;
-    const j = { key, t, avg: r ? r.median : null, best: r ? r.best : null, pb: pbRun ? pbRun.splits[key] : null };
-    if (key === 'finish' && (!pbRun || t < pbRun.time)) j.v = 'pb';
-    else if (!r || r.n < 3) j.v = 'none';
-    else if (t < r.best) j.v = 'best';
-    else {
-      // how many of your runs were slower; the side of the average decides good vs okay
-      const slower = r.times.filter(x => x > t).length / r.n;
-      j.v = t <= r.median ? (slower >= .75 ? 'great' : 'good') : (slower >= .25 ? 'okay' : 'slow');
-    }
-    return j;
-  }
-
-  function onLive(d) {
-    if (!d || !d.ok) return;
-    const wasLive = !!(S.live && S.live.live);
-    const splits = d.splits || {};
-    if (d.world !== S.world) {
-      // a new world: splits already in it (HUD reloaded mid-run) are judged quietly
-      S.world = d.world;
-      S.judged = {};
-      S.pb = null;
-      for (const k of SPLITS) if (splits[k] != null) S.judged[k] = judge(k, splits[k], d.ref);
-    } else {
-      for (const k of SPLITS) {
-        if (splits[k] == null || S.judged[k]) continue;
-        const j = S.judged[k] = judge(k, splits[k], d.ref);
-        onSplit(j, d.ref);
-      }
-    }
-    // who you're playing, once, when the run starts (not when the HUD reloads mid-run)
-    if (d.live && S.announced !== d.world) {
-      S.announced = d.world;
-      if (S.livePrimed && d.match && d.match.opponent) {
-        callout({ vc: 'var(--accent)', k: d.match.type === 'RANKED' ? 'Ranked match' : 'Match',
-          v: `vs <b>${esc(d.match.opponent)}</b>${d.match.opponentElo != null ? `<small>${d.match.opponentElo} elo</small>` : ''}` });
-      }
-    }
-    S.livePrimed = true;
-    if (wasLive && !d.live) {
-      S.linger = Date.now() + (splits.finish != null ? 9000 : 2500);
-      pollSoon(4000);
-      setTimeout(() => pollSoon(1000), 15000);
-    }
-    S.live = d;
-    renderLive();
-  }
-
-  function onSplit(j, ref) {
-    const [word, vc] = VERDICTS[j.v];
-    const pbRun = ref && ref.pb;
-    if (j.key !== 'finish' && pbRun && j.pb != null) S.pb = j.t <= j.pb ? { d: j.t - j.pb } : null;
-    if (j.key === 'finish') S.pb = null;
-
     const pill = $('pill');
     pill.style.setProperty('--vc', vc);
     pill.classList.remove('flash'); void pill.offsetWidth; pill.classList.add('flash');
@@ -490,50 +430,40 @@
     }
     const gold = j.v === 'pb' || j.v === 'best';
     callout({ vc, k, v: v + (sub ? `<small>${sub}</small>` : ''), gold,
-      pb: S.pb ? fmtD(S.pb.d) : null, dur: gold ? 7000 : 5500 });
+      pb: pb != null ? fmtD(pb) : null, dur: gold ? 7000 : 5500 });
   }
 
-  function elapsed() {
-    if (cfg.demo) return demo.game();
-    const d = S.live;
-    return d && d.clockStart ? Date.now() - d.clockStart : null;
+  // who you're playing, when the run starts
+  function onMatch(m) {
+    callout({ vc: 'var(--accent)', k: m.type === 'RANKED' ? 'Ranked match' : 'Match',
+      v: `vs <b>${esc(m.opponent)}</b>${m.opponentElo != null ? `<small>${m.opponentElo} elo</small>` : ''}` });
+  }
+
+  // After a run, ask for the new elo sooner than the usual refresh.
+  function onEnd() {
+    pollSoon(4000);
+    setTimeout(() => pollSoon(1000), 15000);
   }
 
   function renderLive() {
-    const d = S.live;
-    const on = !!(d && d.live) || Date.now() < S.linger;
+    if (!S.live) return;
+    const x = S.live.view();
+    const on = x.on;
     hud.classList.toggle('live', on);
-    if (!d) return;
+    if (!S.live.data) return;
 
-    // how far along you are: the furthest split on the track, and the most recent one by time
-    let far = -1, recent = null;
-    SPLITS.forEach((k, i) => {
-      const j = S.judged[k];
-      if (!j) return;
-      far = i;
-      if (!recent || j.t > recent.t) recent = j;
-    });
-    const nextIdx = SPLITS.findIndex((k, i) => i > far && !S.judged[k]);
-    const nextKey = nextIdx >= 0 ? SPLITS[nextIdx] : null;
-    const ref = d.ref || {};
-    const target = nextKey && ref.splits && ref.splits[nextKey] ? ref.splits[nextKey].median : null;
-    const now = elapsed();
-    const from = recent ? recent.t : 0;
-    const late = target != null && now != null && d.live && now > target;
-
-    // live PB check: once the clock passes your PB run's next split, you're off PB pace
-    if (S.pb && nextKey && ref.pb && ref.pb.splits[nextKey] != null && now != null && now > ref.pb.splits[nextKey]) S.pb = null;
-    const pace = !!S.pb && on;
-    hud.classList.toggle('pbpace', pace);
-    if (S.user) paintPB(pace);
+    const recent = x.recent, ref = x.ref, nextIdx = x.nextIdx, target = x.target, late = x.late;
+    S.pace = x.pb;
+    hud.classList.toggle('pbpace', S.pace != null);
+    if (S.user) paintPB();
 
     // phase: where you are, and how the last split went
     $('ph').textContent = NAMES[recent ? recent.key : ''];
     $('pht').textContent = recent ? fmt(recent.t) : '';
     const phx = $('phx');
     let px = '';
-    if (recent && recent.avg != null && recent.key !== 'finish') px = `<span class="chip" style="--vc:${VERDICTS[recent.v][1]}">${fmtD(recent.t - recent.avg)}</span>`;
-    else if (recent && recent.key === 'finish' && ref.pb) px = `<span class="chip" style="--vc:${VERDICTS[recent.v][1]}">${fmtD(recent.t - ref.pb.time)}</span>`;
+    if (recent && recent.avg != null && recent.key !== 'finish') px = `<span class="chip" style="--vc:${vcOf(recent.v)}">${fmtD(recent.t - recent.avg)}</span>`;
+    else if (recent && recent.key === 'finish' && ref.pb) px = `<span class="chip" style="--vc:${vcOf(recent.v)}">${fmtD(recent.t - ref.pb.time)}</span>`;
     else if (!recent && target != null) px = `<span class="hint">nether avg ${fmt(target)}</span>`;
     if (phx.dataset.html !== px) {
       phx.dataset.html = px;
@@ -554,20 +484,36 @@
       const med = ref.splits && ref.splits[k] ? ref.splits[k].median : null;
       seg.style.flexGrow = med == null ? 1.5 : clamp((med - prev) / 60000, .6, 6).toFixed(2);
       if (med != null) prev = Math.max(prev, med);
-      const j = S.judged[k];
+      const j = x.judged[k];
       node.classList.toggle('hit', !!j);
       node.classList.toggle('next', i === nextIdx && on);
       node.classList.toggle('late', i === nextIdx && late);
-      node.style.setProperty('--vc', j ? VERDICTS[j.v][1] : '');
+      node.style.setProperty('--vc', j ? vcOf(j.v) : '');
       if (S.popKey === k) { node.classList.remove('pop'); void node.offsetWidth; node.classList.add('pop'); }
       seg.classList.toggle('done', !!j);
       seg.classList.toggle('late', i === nextIdx && late);
-      const fill = i === nextIdx && target != null && now != null && target > from ? clamp((now - from) / (target - from), 0, 1) : 0;
-      seg.firstChild.style.width = j ? '' : (fill * 100).toFixed(1) + '%';
+      seg.firstChild.style.width = j ? '' : (i === nextIdx ? x.fill * 100 : 0).toFixed(1) + '%';
     });
     S.popKey = null;
   }
 
+  function startLive(demo) {
+    S.live = LV.create({
+      url: cfg.live, demo, onSplit, onMatch, onEnd, onChange: renderLive,
+      // the made-up run ends in a win, 3s after it closes
+      onDemoEnd: time => setTimeout(() => {
+        if (!S.user) return;
+        const gain = 18, m = { id: 'demo' + Date.now(), date: Date.now() / 1000, res: 'win', opp: 'Opponent', oppElo: 494, time, ff: false, change: gain };
+        const st = S.user.statistics || {}, season = st.season || {};
+        const best = season.bestTime && season.bestTime.ranked;
+        S.user = { ...S.user, eloRate: (S.user.eloRate || 500) + gain,
+          statistics: { ...st, season: { ...season, bestTime: { ranked: best ? Math.min(best, time) : time } } } };
+        S.matches = [m].concat(S.matches || []);
+        matchCallout(m, S.user.eloRate);
+        renderTop();
+      }, 3000),
+    }).start();
+  }
   // ---------- callouts ----------
   function callout(c) {
     S.q.push(c);
@@ -615,75 +561,6 @@
     callout({ vc, k: word, v: `vs <b>${esc(m.opp)}</b>` + (bits.length ? `<small>${bits.join(' · ')}</small>` : ''), dur: 7000 });
   }
 
-  async function pollLive() {
-    clearTimeout(S.liveTimer);
-    let next = 1000;
-    if (cfg.demo) {
-      onLive(demo.state());
-      next = 250;
-    } else {
-      try {
-        const res = await fetch(cfg.live, { cache: 'no-store' });
-        onLive(await res.json());
-      } catch (e) {
-        // helper not running: stats only
-        if (S.live && S.live.live) { S.live = Object.assign({}, S.live, { live: false }); renderLive(); }
-        next = 5000;
-      }
-    }
-    S.liveTimer = setTimeout(pollLive, next);
-  }
-
-  // ---------- demo: ?demo plays a fake run so you can see every state (?demo=40 is faster) ----------
-  const demo = (() => {
-    const M = s => Math.round(s * 1000);
-    const spread = (med, best, n) => Array.from({ length: n }, (_, i) => Math.round(best + (med - best) * 2 * i / (n - 1))).sort((a, b) => a - b);
-    const ref = {
-      kind: 'ranked', runs: 22,
-      pb: { time: M(1409), splits: { nether: M(311), bastion: M(366), fortress: M(807), blind: M(892), stronghold: M(1203), end: M(1274), finish: M(1409) } },
-      splits: {},
-    };
-    [['nether', 251, 166, 22], ['bastion', 338, 200, 20], ['fortress', 665, 320, 11], ['blind', 982, 618, 9],
-     ['stronghold', 1385, 1038, 8], ['end', 1387, 1274, 5], ['finish', 1441, 1409, 2]].forEach(([k, med, best, n]) => {
-      ref.splits[k] = { n, median: M(med), best: M(best), times: spread(M(med), M(best), n) };
-    });
-    // one run: great nether, slow bastion (drops PB pace), back on it by fortress, best-ever stronghold, new PB
-    const RUN = { nether: M(226), bastion: M(372), fortress: M(600), blind: M(700), stronghold: M(1020), end: M(1150), finish: M(1330) };
-    const IDLE = 4000, AFTER = 14000;
-    let t0 = Date.now(), loop = 0, scored = false;
-    const span = () => IDLE + RUN.finish / cfg.demo + AFTER;
-    const tick = () => {
-      if (Date.now() - t0 > span()) { t0 = Date.now(); loop++; scored = false; }
-      return Date.now() - t0;
-    };
-    return {
-      game() { return Math.max(0, (tick() - IDLE) * cfg.demo); },
-      state() {
-        const w = tick(), g = Math.max(0, (w - IDLE) * cfg.demo);
-        const splits = {};
-        for (const k in RUN) if (g >= RUN[k]) splits[k] = RUN[k];
-        const live = w >= IDLE && g < RUN.finish + 4000 * cfg.demo;
-        if (!live && splits.finish != null && !scored && S.user) {
-          scored = true;
-          setTimeout(() => {
-            const gain = 18, m = { id: 'demo' + loop, date: Date.now() / 1000, res: 'win', opp: 'Opponent', oppElo: 494, time: RUN.finish, ff: false, change: gain };
-            const st = S.user.statistics || {}, season = st.season || {};
-            const best = season.bestTime && season.bestTime.ranked;
-            S.user = { ...S.user, eloRate: (S.user.eloRate || 500) + gain,
-              statistics: { ...st, season: { ...season, bestTime: { ranked: best ? Math.min(best, RUN.finish) : RUN.finish } } } };
-            S.matches = [m].concat(S.matches || []);
-            matchCallout(m, S.user.eloRate);
-            renderTop();
-          }, 3000);
-        }
-        return {
-          ok: true, world: 'demo #' + loop, kind: 'ranked', live, splits, finished: splits.finish != null,
-          match: { type: 'RANKED', opponent: 'Opponent', opponentElo: 494 }, ref,
-        };
-      },
-    };
-  })();
-
   async function startDemo() {
     if (cfg.u) { try { await poll(); } catch (e) {} clearTimeout(S.timer); }
     if (!S.user) {
@@ -694,13 +571,13 @@
     }
     S.primed = true;
     renderTop();
-    pollLive();
+    startLive(cfg.demo);
   }
 
-  setInterval(() => { if (S.live) renderLive(); }, 250);
+  setInterval(renderLive, 250);
   renderTop();
   if (cfg.demo) startDemo();
-  else { poll(); if (cfg.live !== '0') pollLive(); }
+  else { poll(); if (cfg.live !== '0') startLive(0); }
 })();
 </script>
 </body>

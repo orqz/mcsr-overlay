@@ -149,7 +149,8 @@
   .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 8px 16px; background: var(--panel); border-bottom: 2px solid var(--line); }
   .tg { display: flex; align-items: center; gap: 8px; }
   .tg > .k { font: 400 10px/1 var(--px); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
-  .float { position: absolute; right: 14px; bottom: 14px; z-index: 3; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; background: rgba(10, 12, 13, .88);
+  .floats { position: absolute; right: 14px; bottom: 14px; z-index: 3; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .float { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; background: rgba(10, 12, 13, .88);
     box-shadow: 0 -2px 0 0 var(--line2), 0 2px 0 0 var(--line2), -2px 0 0 0 var(--line2), 2px 0 0 0 var(--line2); }
   .float .k { font: 400 10px/1 var(--px); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
   .stage { position: relative; min-height: 0; overflow: hidden; background: #060708; }
@@ -244,13 +245,15 @@
       <div class="tg"><div class="chips"><button type="button" class="chip" id="gui" title="Hotbar and hearts in the scene">Game HUD</button><button type="button" class="chip" id="box" title="The area your OBS source covers">Source box</button></div></div>
     </div>
     <div class="stage" id="stage">
-      <div class="float" data-only="overlay"><span class="k">Simulate</span>
-        <button type="button" class="btn sm win" data-sim="win" title="A made-up win: popup, elo and session">+ Win</button>
-        <button type="button" class="btn sm loss" data-sim="loss" title="A made-up loss">+ Loss</button>
-        <button type="button" class="btn sm" id="simclear" title="Back to the real data">Clear</button></div>
-      <div class="float" data-only="hud"><span class="k">Demo run</span>
-        <div class="seg" id="speeds"><button type="button" data-speed="20">20×</button><button type="button" data-speed="40">40×</button></div>
-        <button type="button" class="btn sm" id="replay">Replay</button></div>
+      <div class="floats">
+        <div class="float" id="runfloat"><span class="k">Demo run</span>
+          <div class="seg" id="speeds"><button type="button" data-speed="20">20×</button><button type="button" data-speed="40">40×</button></div>
+          <button type="button" class="btn sm" id="replay">Replay</button></div>
+        <div class="float" data-only="overlay"><span class="k">Simulate</span>
+          <button type="button" class="btn sm win" data-sim="win" title="A made-up win: popup, elo and session">+ Win</button>
+          <button type="button" class="btn sm loss" data-sim="loss" title="A made-up loss">+ Loss</button>
+          <button type="button" class="btn sm" id="simclear" title="Back to the real data">Clear</button></div>
+      </div>
       <div class="scene" id="scene">
         <iframe id="frame" title="Overlay preview"></iframe>
         <iframe id="hudframe" title="HUD preview" style="visibility:hidden"></iframe>
@@ -264,9 +267,13 @@
         <button type="button" class="btn primary" id="copy">Copy URL</button>
         <a class="btn" id="open" target="_blank" rel="noopener">Open</a>
       </div>
-      <p class="hint" data-only="overlay">
+      <p class="hint" data-only="overlay" id="sitehint">
         In OBS: <b>Sources → + → Browser</b>, untick <b>Local file</b>, paste the URL, size it <span class="sz" id="size">—</span>.
         It refreshes every <span id="every">30s</span>. To start a new session, right-click the source → <b>Interact</b> and double-click the session.
+      </p>
+      <p class="hint" data-only="overlay" id="runhint">
+        Live run is on, so this URL is served by the helper on your PC: start <b>live/mcsr-live.py</b>, then add a <b>Browser</b> source with it, size <span class="sz" id="rsize">—</span>.
+        The size leaves room for the run.
       </p>
       <p class="hint" data-only="hud">
         Runs from the helper on your PC, not this site: start <b>live/mcsr-live.py</b>, then add a <b>Browser</b> source with this URL, size <span class="sz" id="hsize">—</span> at 100% transform. Use <b>Scale</b> to resize it.
@@ -383,7 +390,7 @@
   const FLAT = { dark: '#1b1d22', light: '#dfe1e6', green: '#00b140' };
   const HUD_DEFAULTS = { scale: 1.4, bga: 84, live: true, refresh: 30, reset: 4, speed: 20 };
   // Bump when the customizer needs a newer overlay.html, so a cached old one isn't used
-  const V = 2;
+  const V = 3;
 
   const frame = $('#frame'), hudFrame = $('#hudframe'), stage = $('#stage'), sceneEl = $('#scene'), bounds = $('#bounds');
   const form = $('#form'), hudForm = $('#hudform'), dock = $('#dock');
@@ -434,6 +441,14 @@
     ${auto ? `<button type="button" class="chip plain" data-auto="${k}">Auto</button>` : ''}</span></div>`;
   const group = (id, title, body, open) => `<details class="grp" data-g="${id}"${open ? ' open' : ''}><summary>${title}</summary><div>${body}</div></details>`;
 
+  const HELPER_STEPS = `<ol class="steps">
+      <li>Play with <a href="https://github.com/RedLime/SpeedRunIGT" target="_blank" rel="noopener">SpeedRunIGT</a> installed; the helper reads the splits it writes.</li>
+      <li><a href="https://github.com/orqz/mcsr-overlay/archive/refs/heads/main.zip">Download this repo</a> and start the helper from its folder (Python 3, nothing to install):
+        <div class="code"><span>python3 live/mcsr-live.py</span><button type="button" class="btn sm" data-copy="python3 live/mcsr-live.py">Copy</button></div>
+        On Windows: <code>py live\\mcsr-live.py</code></li>
+      <li>Add a <b>Browser</b> source in OBS with the URL below.</li>
+    </ol>`;
+
   function buildForms() {
     const show = SHOW.map(([title, f, items]) => `<div data-for="${f}"><div class="sub">${title}</div>` +
       (title === 'Stats' ? seg('stats', 'From', [['season', 'This season'], ['total', 'All time']]) : '') +
@@ -449,6 +464,14 @@
         <label class="row" data-for="card bar compact"><span class="lbl">Rank goal</span><select class="input" data-k="goal">
           <option value="">Next division</option>${GOALS.map(g => `<option value="${g}">${g}</option>`).join('')}</select></label>
         ${range('rotate', 'Rotate info every', 0, 30, 1, 's', 'compact')}`, true)}
+      ${group('live', 'Live run', `
+        ${toggle('run', 'Show the run you’re in')}
+        <div id="runopts">
+          ${toggle('runpop', 'Split popups')}
+          <p class="note">Every style adds your splits as you play, each graded against your own past runs, plus PB pace. The preview plays a made-up run.</p>
+          <div class="sub">Set up</div>
+          ${HELPER_STEPS}
+        </div>`, true)}
       ${group('size', 'Size and position', `
         <div class="row"><span class="lbl">Size</span><div class="seg" id="sizes">${SIZES.map(([v, l]) => `<button type="button" data-size="${v}">${l}</button>`).join('')}</div></div>
         ${range('scale', 'Scale', 50, 250, 5, '%')}
@@ -481,13 +504,7 @@
         <p class="note">One pill with your elo, tier, session, PB and last five games. While you're in a run a second row opens and grades every split against your own past runs.</p>
       </section>
       <section class="grp"><h2>Run the live helper</h2>
-        <ol class="steps">
-          <li>Play with <a href="https://github.com/RedLime/SpeedRunIGT" target="_blank" rel="noopener">SpeedRunIGT</a> installed; the helper reads the splits it writes.</li>
-          <li><a href="https://github.com/orqz/mcsr-overlay/archive/refs/heads/main.zip">Download this repo</a> and start the helper from its folder (Python 3, nothing to install):
-            <div class="code"><span id="cmd">python3 live/mcsr-live.py</span><button type="button" class="btn sm" data-copy="python3 live/mcsr-live.py">Copy</button></div>
-            On Windows: <code>py live\\mcsr-live.py</code></li>
-          <li>Add a <b>Browser</b> source in OBS with the URL below.</li>
-        </ol>
+        ${HELPER_STEPS}
         <p class="note">Without the helper the HUD still shows your stats; the live row just stays closed.</p>
       </section>
       ${group('hbehavior', 'Behavior', `
@@ -551,7 +568,7 @@
     dock.innerHTML = STYLES.map(([v, n, d, g]) => {
       const gl = g !== last ? `<span class="gl">${(last = g)}</span>` : '';
       return `${gl}<button type="button" class="sty" data-style="${v}" title="${n}: ${d}"><span class="pv"><iframe tabindex="-1" title="${n} preview" loading="lazy"
-        src="overlay.html?v=${V}&demo=1&style=${v}&layout=compact"></iframe></span><span class="tn">${n}</span><span class="td">${d}</span></button>`;
+        src="overlay.html?v=${V}&demo=1&run=0&style=${v}&layout=compact"></iframe></span><span class="tn">${n}</span><span class="td">${d}</span></button>`;
     }).join('');
     thumbs.push(...$$('.sty iframe'));
     dock.addEventListener('click', e => {
@@ -616,7 +633,10 @@
     $('#box').classList.toggle('on', showBox);
     $('#undo').disabled = !past.length;
     $('#every').textContent = S.refresh + 's';
-    $('#open').textContent = mode === 'hud' ? 'Open demo' : 'Open';
+    $('#open').textContent = mode === 'hud' || S.run ? 'Open demo' : 'Open';
+    $('#runfloat').hidden = !(mode === 'hud' || S.run);
+    $('#runopts').hidden = !S.run;
+    if (mode === 'overlay') { $('#sitehint').hidden = S.run; $('#runhint').hidden = !S.run; }
   }
 
   function changed(delay = 0) {
@@ -639,8 +659,10 @@
       if (k === 'u' || S[k] === fallback(k)) continue;
       p.set(k, typeof S[k] === 'boolean' ? (S[k] ? 1 : 0) : S[k]);
     }
-    return new URL('overlay.html', location.href).href + '?' + p.toString();
+    return (S.run ? 'http://127.0.0.1:7477/overlay.html' : new URL('overlay.html', location.href).href) + '?' + p.toString();
   }
+  // Open: with the live run on, the same overlay from this site playing the made-up run
+  const overlayDemoUrl = () => new URL('overlay.html', location.href).href + '?' + overlayUrl().split('?')[1] + (S.u ? '' : '&demo=1') + '&rundemo=' + H.speed;
   // The HUD is served by the helper on 127.0.0.1; the preview runs its demo from this site.
   function hudUrl(preview) {
     const p = new URLSearchParams();
@@ -657,10 +679,10 @@
     if (!S) return;
     const url = mode === 'hud' ? hudUrl(false) : overlayUrl();
     $('#url').value = url;
-    $('#open').href = mode === 'hud' ? hudUrl(true) : url;
+    $('#open').href = mode === 'hud' ? hudUrl(true) : S.run ? overlayDemoUrl() : url;
   }
   function push() {
-    if (S) frame.contentWindow.postMessage({ type: 'mcsr:config', cfg: S.u ? S : Object.assign({}, S, { demo: 1 }) }, '*');
+    if (S) frame.contentWindow.postMessage({ type: 'mcsr:config', cfg: Object.assign({}, S, S.u ? {} : { demo: 1 }, { rundemo: S.run ? H.speed : 0 }) }, '*');
   }
   function loadHud(force) {
     if (mode !== 'hud' || !S) return;
@@ -709,7 +731,7 @@
       tag.style.transform = `scale(${(1 / z).toFixed(3)})`;
     }
     const sz = b ? `${b.w} × ${b.h}` : '—';
-    $(mode === 'hud' ? '#hsize' : '#size').textContent = sz;
+    $(mode === 'hud' ? '#hsize' : S.run ? '#rsize' : '#size').textContent = sz;
   }
   function applyScene() {
     const flat = FLAT[sceneName], checker = sceneName === 'checker';
@@ -833,7 +855,10 @@
     H.speed = Number(b.dataset.speed);
     changed(0);
   });
-  $('#replay').addEventListener('click', () => loadHud(true));
+  $('#replay').addEventListener('click', () => {
+    if (mode === 'hud') loadHud(true);
+    else frame.contentWindow.postMessage({ type: 'mcsr:run-replay' }, '*');
+  });
   $$('[data-mode]').forEach(b => b.addEventListener('click', () => { if (S && b.dataset.mode !== mode) setMode(b.dataset.mode); }));
 
   $('#u').addEventListener('input', e => { if (!S) return; snapshot(); S.u = e.target.value.trim(); changed(500); });
@@ -884,7 +909,7 @@
 
   window.addEventListener('resize', layoutStage);
   if (window.ResizeObserver) new ResizeObserver(layoutStage).observe(stage);
-  frame.src = 'overlay.html?preview=1&v=' + V; // set after the listener so the ready message isn't missed
+  frame.src = 'overlay.html?preview=1&run=0&v=' + V; // set after the listener so the ready message isn't missed
 })();
 </script>
 </body>

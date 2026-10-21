@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""mcsr-live: serves the HUD plus the live run state SpeedRunIGT writes to disk.
+"""mcsr-live: serves the HUD and overlay plus the live run state SpeedRunIGT writes to disk.
 
 SpeedRunIGT keeps ~/speedrunigt/latest_world.json pointing at the world you're
 in and appends every split to <world>/speedrunigt/events.log as
 "<event> <rta ms> <igt ms>". Finished worlds land in ~/speedrunigt/records/,
 which is where your average and best splits come from.
 
-The HUD is served from here (not GitHub Pages) because Chrome blocks public
-sites from reading 127.0.0.1, and OBS's browser source is Chrome.
+The HUD and overlay are served from here (not GitHub Pages) because Chrome
+blocks public sites from reading 127.0.0.1, and OBS's browser source is Chrome.
 
     python3 live/mcsr-live.py
     OBS Browser source: http://127.0.0.1:7477/hud.html?u=<your name>
+                    or: http://127.0.0.1:7477/overlay.html?u=<your name>&style=<any style>
 
 Standard library only. It only ever reads your game files.
 """
@@ -282,7 +283,7 @@ def main():
         print(json.dumps(live_state(History()), indent=2))
         return
     server = ThreadingHTTPServer((args.host, args.port), Handler)
-    print(f'mcsr-live on http://{args.host}:{args.port}/hud.html?u=<your name>', flush=True)
+    print(f'mcsr-live on http://{args.host}:{args.port}/hud.html?u=<your name> (or /overlay.html?u=<your name>&style=…)', flush=True)
     server.serve_forever()
 
 
