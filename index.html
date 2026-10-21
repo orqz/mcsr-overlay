@@ -3,218 +3,355 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MCSR Overlay Customizer</title>
+<title>MCSR Overlay</title>
+<meta name="description" content="Stream overlays for MCSR Ranked: rank badge, elo, session and recent matches in 13 styles, plus a live run HUD. Set it up here, copy the URL into OBS.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <style>
+  @font-face { font-family: 'Monocraft'; src: url(https://cdn.jsdelivr.net/gh/IdreesInc/Monocraft@v4.2.1/dist/Monocraft-ttf/Monocraft.ttf) format('truetype'); font-display: swap; }
   :root {
-    --bg: #0b0c0f; --surface: #111216; --line: #1d1f25; --line2: #2a2d35;
-    --text: #e7e9ee; --muted: #8b909b; --faint: #5d626c; --ok: #4ade80; --bad: #f87171;
+    --bg: #0a0c0d; --panel: #101314; --panel2: #151a1b; --raise: #1c2223;
+    --line: #1d2324; --line2: #2a3233; --line3: #3e4849;
+    --text: #e8ecec; --muted: #8a9495; --faint: #5a6364;
+    --green: #76c043; --green-ink: #0b1d20; --gray: #c6c6c6; --bad: #ff6b6b;
+    --px: 'Monocraft', ui-monospace, monospace;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
-  body { background: var(--bg); color: var(--text); font: 400 13px/1.4 'Geist', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-  button, input, select { font: inherit; color: inherit; }
+  body { background: var(--bg); color: var(--text); font: 400 13px/1.45 'Geist', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  a { color: inherit; }
+  [hidden], .hide { display: none !important; }
 
-  .app { display: grid; grid-template-columns: 320px minmax(0, 1fr); height: 100vh; }
-  aside { overflow-y: auto; background: var(--surface); border-right: 1px solid var(--line); }
-  .brand { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
-  .brand h1 { margin: 0; font-size: 14px; font-weight: 600; }
-  .brand p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+  /* Minecraft GUI frame: a 2px ring outside the box with the corners left out */
+  .btn, .tab, .chip, .seg, .tile, .sty, .input, .code, .steps li::before, dialog {
+    --rc: var(--line2);
+    box-shadow: 0 -2px 0 0 var(--rc), 0 2px 0 0 var(--rc), -2px 0 0 0 var(--rc), 2px 0 0 0 var(--rc);
+  }
 
-  .grp { padding: 14px 20px 16px; border-bottom: 1px solid var(--line); }
-  .grp h2 { margin: 0 0 10px; font-size: 12px; font-weight: 600; }
-  .sub { margin: 12px 0 6px; font-size: 11px; color: var(--muted); }
-  h2 + div > .sub { margin-top: 0; }
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
+  .app { display: grid; grid-template-columns: 360px minmax(0, 1fr); grid-template-rows: 56px minmax(0, 1fr); height: 100vh; }
+
+  /* ---------- top bar ---------- */
+  .top { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; padding: 0 14px 0 18px; background: var(--panel); border-bottom: 2px solid var(--line); }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .logo b { font: 400 15px/1 var(--px); letter-spacing: .02em; white-space: nowrap; }
+  .logo b i { font-style: normal; color: var(--green); }
+  .modes { display: flex; gap: 10px; margin-left: 22px; }
+  .tab { height: 32px; padding: 0 14px; border: 0; background: none; color: var(--muted); font: 400 11px/1 var(--px); letter-spacing: .05em; text-transform: uppercase; --rc: transparent; }
+  .tab:hover { color: var(--text); }
+  .tab.on { color: var(--text); background: var(--panel2); --rc: var(--gray); }
+  .tab .new { margin-left: 6px; padding: 2px 4px; background: var(--green); color: var(--green-ink); font-size: 9px; }
+  .top .sp { flex: 1; }
+  .top .acts { display: flex; gap: 8px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; margin: 2px; padding: 0 12px; border: 0; background: var(--panel2); color: var(--text);
+    font: 400 11px/1 var(--px); letter-spacing: .04em; text-transform: uppercase; text-decoration: none; white-space: nowrap; }
+  .btn:hover { --rc: var(--line3); background: var(--raise); }
+  .btn.primary { background: var(--green); color: var(--green-ink); --rc: #a8de80; }
+  .btn.primary:hover { background: #86cc55; }
+  .btn:disabled { opacity: .35; cursor: default; }
+  .btn.sm { height: 26px; padding: 0 9px; }
+  .btn.win { color: #7be27b; } .btn.loss { color: #ff8080; }
+
+  /* ---------- sidebar ---------- */
+  .side { overflow-y: auto; overflow-x: hidden; background: var(--panel); border-right: 2px solid var(--line); scrollbar-width: thin; scrollbar-color: var(--line2) transparent; }
+  .grp { padding: 16px 20px 18px; border-bottom: 2px solid var(--line); }
+  .grp > h2, .grp > summary { display: flex; align-items: center; justify-content: space-between; margin: 0 0 12px; font: 400 11px/1 var(--px); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); list-style: none; }
+  .grp > summary { cursor: pointer; user-select: none; }
+  .grp > summary::-webkit-details-marker { display: none; }
+  .grp > summary::after { content: '+'; font: 400 14px/1 var(--px); color: var(--faint); }
+  details.grp[open] > summary::after { content: '−'; }
+  details.grp:not([open]) > summary { margin: 0; }
+  .grp > summary:hover, .grp > summary:hover::after { color: var(--text); }
+  .sub { margin: 16px 0 8px; font-size: 12px; color: var(--muted); }
+  .grp > div:first-of-type > .sub:first-child, summary + div > .sub:first-child { margin-top: 0; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 34px; }
   .row > .lbl { flex: none; color: var(--muted); }
   label.row { cursor: pointer; }
-  .hide { display: none !important; }
+  .note { margin: 10px 0 0; font-size: 12px; line-height: 1.55; color: var(--muted); }
+  .note b { color: var(--text); font-weight: 500; }
 
-  .input { width: 100%; height: 32px; padding: 0 10px; border: 1px solid var(--line2); border-radius: 6px; background: var(--bg); outline: none; }
-  .input:focus { border-color: #4a4e58; }
+  .input { display: block; width: calc(100% - 4px); height: 34px; margin: 2px; padding: 0 10px; border: 0; background: var(--bg); outline: none; }
+  .input:focus { --rc: var(--green); }
+  .input.mc { font: 400 14px/1 var(--px); }
+  .input + .input { margin-top: 12px; }
   select.input { width: auto; min-width: 150px; padding-right: 28px; appearance: none; cursor: pointer;
-    background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238b909b' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center; }
-  .status { min-height: 16px; margin-top: 6px; font-size: 12px; color: var(--muted); }
-  .status .dot { display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; background: var(--faint); }
-  .status.ok .dot { background: var(--ok); } .status.bad { color: var(--bad); } .status.bad .dot { background: var(--bad); }
+    background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h2v2H0zM2 2h2v2H2zM4 4h2v2H4zM6 2h2v2H6zM8 0h2v2H8z' fill='%238a9495'/%3E%3C/svg%3E") no-repeat right 10px center; }
+  .status { display: flex; align-items: center; gap: 8px; min-height: 22px; margin: 10px 2px 0; font-size: 12px; color: var(--muted); }
+  .status b { color: var(--text); font-weight: 500; }
+  .status .dot { flex: none; width: 6px; height: 6px; background: var(--faint); }
+  .status.bad { color: var(--bad); } .status.bad .dot { background: var(--bad); }
 
-  /* layout + theme pickers */
-  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .tile { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px 10px; border: 1px solid var(--line2); border-radius: 8px; background: var(--bg); color: var(--muted); text-align: left; cursor: pointer; }
-  .tile:hover { border-color: #3a3e47; }
-  .tile.on { border-color: var(--text); color: var(--text); }
+  .rk { display: inline-block; flex: none; background: var(--sprite) no-repeat; image-rendering: pixelated; }
+
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 2px; }
+  .tile { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px 10px; border: 0; background: var(--panel2); color: var(--muted); text-align: left; }
+  .tile:hover { --rc: var(--line3); }
+  .tile.on { --rc: var(--green); }
   .tile svg { display: block; width: 100%; height: auto; margin-bottom: 6px; color: var(--muted); }
-  .tile.on svg { color: var(--text); }
-  .tile .tn { font-weight: 500; color: var(--text); }
+  .tile.on svg { color: var(--green); }
+  .tile .tn { font: 400 11px/1.3 var(--px); letter-spacing: .03em; text-transform: uppercase; color: var(--text); }
   .tile .td { font-size: 11px; color: var(--muted); }
-  /* style previews: tiny versions of each style, using MCSR's own badge */
-  .sp { display: flex; align-items: center; gap: 7px; width: 100%; height: 50px; margin-bottom: 6px; padding: 0 10px; border-radius: 4px; }
-  .sp i { display: block; height: 3px; margin: 3px 0; border-radius: 1px; background: #fff; }
-  .sp .lines { flex: 1; }
-  .sp .rk { flex: none; width: 30px; height: 30px; background-size: 180px 90px; background-position: -60px -60px; image-rendering: pixelated; }
-  .sp-badge { flex-direction: column; justify-content: center; gap: 2px; background: #2e3a2b; }
-  .sp-badge .rk { width: 24px; height: 24px; background-size: 144px 72px; background-position: -48px -48px; }
-  .sp-badge .lines { flex: none; width: 50%; }
-  .sp-badge i { margin: 2px auto; }
-  .sp-tooltip { background: #100010; box-shadow: inset 0 0 0 2px #100010, inset 0 0 0 4px #2c0b6e; }
-  .sp-banner { gap: 0; padding: 0; background: #181b20; box-shadow: inset 0 2px 0 #2ce0d8, inset 0 -2px 0 #2ce0d8; }
-  .sp-banner .tl { display: flex; align-items: center; height: 100%; padding: 0 8px; background: rgba(44,224,216,.16); }
-  .sp-banner .lines { padding: 0 8px; }
-  .sp-clean { background: #0f1115; box-shadow: inset 0 0 0 1px #24272e; }
-  .sp-clean .hsq { flex: none; width: 18px; height: 18px; border-radius: 3px; background: #6b7280; }
-  .sp-clean b { flex: none; width: 16px; height: 8px; border-radius: 1px; background: #fff; }
 
-  /* show / hide chips */
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { height: 28px; padding: 0 10px; border: 1px solid var(--line2); border-radius: 6px; background: none; color: var(--muted); font-size: 12px; cursor: pointer; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 10px; border: 0; background: var(--panel2); color: var(--muted); font-size: 12px; }
+  .chip::before { content: ''; flex: none; width: 6px; height: 6px; background: var(--line3); }
   .chip:hover { color: var(--text); }
-  .chip.on { border-color: var(--line2); background: var(--line2); color: var(--text); }
+  .chip.on { color: var(--text); background: var(--raise); --rc: var(--line3); }
+  .chip.on::before { background: var(--green); }
+  .chip.plain::before { display: none; }
+  .chip:disabled { opacity: .35; cursor: default; }
 
-  .seg { display: inline-flex; padding: 2px; border: 1px solid var(--line2); border-radius: 6px; background: var(--bg); }
-  .seg button { height: 24px; padding: 0 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-size: 12px; cursor: pointer; }
+  .seg { display: inline-flex; flex-wrap: wrap; gap: 2px; margin: 2px; padding: 2px; background: var(--bg); }
+  .seg button { height: 24px; padding: 0 8px; border: 0; background: none; color: var(--muted); font-size: 12px; white-space: nowrap; }
   .seg button:hover { color: var(--text); }
   .seg button.on { background: var(--line2); color: var(--text); }
 
-  .sw { position: relative; flex: none; width: 28px; height: 16px; }
+  .sw { position: relative; flex: none; width: 30px; height: 16px; }
   .sw input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-  .sw i { position: absolute; inset: 0; border-radius: 99px; background: var(--line2); transition: background .15s; pointer-events: none; }
-  .sw i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #8b909b; transition: transform .15s, background .15s; }
-  .sw input:checked + i { background: var(--text); }
-  .sw input:checked + i::after { transform: translateX(12px); background: var(--bg); }
-  .sw input:focus-visible + i { outline: 2px solid #4a4e58; outline-offset: 2px; }
+  .sw i { position: absolute; inset: 0; background: var(--line2); pointer-events: none; }
+  .sw i::after { content: ''; position: absolute; top: 3px; left: 3px; width: 10px; height: 10px; background: var(--muted); transition: transform .12s; }
+  .sw input:checked + i { background: var(--green); }
+  .sw input:checked + i::after { transform: translateX(14px); background: var(--green-ink); }
+  .sw input:focus-visible + i { outline: 2px solid var(--green); outline-offset: 2px; }
 
-  .rng { display: flex; align-items: center; gap: 10px; flex: 1; max-width: 180px; }
-  .rng output { width: 40px; text-align: right; font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted); }
-  input[type=range] { flex: 1; height: 16px; margin: 0; background: none; appearance: none; cursor: pointer; }
-  input[type=range]::-webkit-slider-runnable-track { height: 2px; border-radius: 1px; background: var(--line2); }
-  input[type=range]::-webkit-slider-thumb { width: 12px; height: 12px; margin-top: -5px; border-radius: 50%; background: var(--text); appearance: none; }
-  input[type=range]::-moz-range-track { height: 2px; background: var(--line2); }
-  input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: var(--text); }
+  .rng { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; max-width: 190px; }
+  .rng output { width: 42px; text-align: right; font: 400 12px/1 'Geist Mono', monospace; color: var(--muted); }
+  input[type=range] { flex: 1; min-width: 0; height: 18px; margin: 0; background: none; appearance: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; background: var(--line2); }
+  input[type=range]::-webkit-slider-thumb { width: 10px; height: 18px; margin-top: -7px; appearance: none; background: var(--gray); box-shadow: inset -2px -2px 0 #8b8b8b, inset 2px 2px 0 #fff; }
+  input[type=range]::-moz-range-track { height: 4px; background: var(--line2); }
+  input[type=range]::-moz-range-thumb { width: 10px; height: 18px; border: 0; border-radius: 0; background: var(--gray); box-shadow: inset -2px -2px 0 #8b8b8b, inset 2px 2px 0 #fff; }
+  input[type=range]:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 
   .clr { display: flex; align-items: center; gap: 8px; }
-  .clr input[type=color] { width: 22px; height: 22px; padding: 0; border: 1px solid var(--line2); border-radius: 5px; background: none; cursor: pointer; }
+  .clr input[type=color] { width: 24px; height: 24px; margin: 2px; padding: 0; border: 0; background: none; cursor: pointer; box-shadow: 0 0 0 2px var(--line2); }
   .clr input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
-  .clr input[type=color]::-webkit-color-swatch { border: 0; border-radius: 4px; }
-  .clr .input { width: 78px; height: 28px; font-family: 'Geist Mono', monospace; font-size: 12px; }
-  .clr .chip { height: 28px; padding: 0 8px; }
-  aside { overflow-x: hidden; }
-  .rng { min-width: 0; }
+  .clr input[type=color]::-webkit-color-swatch { border: 0; }
+  .clr .input { width: 84px; height: 28px; font: 400 12px/1 'Geist Mono', monospace; }
+  .clr .chip { height: 26px; padding: 0 8px; }
 
-  details.grp > summary { display: flex; align-items: center; justify-content: space-between; margin: -2px 0; font-size: 12px; font-weight: 600; list-style: none; cursor: pointer; }
-  details.grp > summary::-webkit-details-marker { display: none; }
-  details.grp > summary::after { content: ''; width: 7px; height: 7px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: rotate(45deg) translate(-2px, -2px); transition: transform .15s; }
-  details.grp[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
-  details.grp[open] > summary { margin-bottom: 10px; }
+  .steps { margin: 0; padding: 2px 0 0; list-style: none; counter-reset: s; }
+  .steps li { position: relative; padding: 0 0 14px 32px; font-size: 12px; line-height: 1.55; color: var(--muted); }
+  .steps li::before { counter-increment: s; content: counter(s); position: absolute; left: 2px; top: 0; width: 20px; height: 20px; display: grid; place-items: center;
+    background: var(--panel2); color: var(--text); font: 400 11px/1 var(--px); }
+  .steps b { color: var(--text); font-weight: 500; }
+  .steps a { color: var(--green); text-underline-offset: 2px; }
+  .steps code { font: 400 11px/1 'Geist Mono', monospace; color: var(--text); }
+  .code { display: flex; align-items: center; gap: 8px; margin: 8px 2px 6px; padding-left: 10px; background: var(--bg); font: 400 12px/34px 'Geist Mono', monospace; color: var(--text); }
+  .code span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .code .btn { margin: 4px; --rc: transparent; }
 
-  main { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; }
-  .bar { display: flex; align-items: center; gap: 12px; height: 53px; padding: 0 20px; border-bottom: 1px solid var(--line); }
-  .bar .sp { flex: 1; }
-  .bar .lbl { color: var(--muted); }
-  .stage { position: relative; overflow: auto; }
-  .stage.bg-game { background: linear-gradient(180deg, #86aee0 0, #b3cdea 52%, #5f8f3c 52%, #4e7a31 62%, #74512f 62%, #5c3f24 100%); }
-  .stage.bg-green { background: #00b140; }
-  .stage.bg-dark { background: #1b1d22; }
-  .stage.bg-light { background: #dfe1e6; }
-  .stage.bg-checker { background: #26282d; background-image: linear-gradient(45deg, #1d1f23 25%, transparent 25%, transparent 75%, #1d1f23 75%), linear-gradient(45deg, #1d1f23 25%, transparent 25%, transparent 75%, #1d1f23 75%); background-size: 20px 20px; background-position: 0 0, 10px 10px; }
-  iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
+  /* ---------- preview ---------- */
+  .main { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto; min-width: 0; min-height: 0; }
+  .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 8px 16px; background: var(--panel); border-bottom: 2px solid var(--line); }
+  .tg { display: flex; align-items: center; gap: 8px; }
+  .tg > .k { font: 400 10px/1 var(--px); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+  .float { position: absolute; right: 14px; bottom: 14px; z-index: 3; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; background: rgba(10, 12, 13, .88);
+    box-shadow: 0 -2px 0 0 var(--line2), 0 2px 0 0 var(--line2), -2px 0 0 0 var(--line2), 2px 0 0 0 var(--line2); }
+  .float .k { font: 400 10px/1 var(--px); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+  .stage { position: relative; min-height: 0; overflow: hidden; background: #060708; }
+  .scene { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; background: #1b1d22 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
+  .scene.bg-dark { background: #1b1d22; } .scene.bg-light { background: #dfe1e6; } .scene.bg-green { background: #00b140; }
+  .bg-checker { background: #26282d; background-image: linear-gradient(45deg, #1d1f23 25%, transparent 25%, transparent 75%, #1d1f23 75%), linear-gradient(45deg, #1d1f23 25%, transparent 25%, transparent 75%, #1d1f23 75%); background-size: 40px 40px; background-position: 0 0, 20px 20px; }
+  .scene iframe { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; border: 0; background: transparent; }
+  .bounds { position: absolute; z-index: 2; pointer-events: none; outline: 2px dashed rgba(118, 192, 67, .9); }
+  .bounds span { position: absolute; left: 0; top: 100%; margin-top: 6px; padding: 4px 7px; background: var(--green); color: var(--green-ink); font: 400 12px/1 var(--px); white-space: nowrap; transform-origin: 0 0; }
+  .bounds.up span { top: auto; bottom: 100%; margin: 0 0 6px; transform-origin: 0 100%; }
+  .bounds.right span { left: auto; right: 0; transform-origin: 100% 0; }
+  .bounds.up.right span { transform-origin: 100% 100%; }
 
-  .out { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 16px 20px 18px; border-top: 1px solid var(--line); background: var(--surface); }
-  .url { display: flex; gap: 8px; }
-  .url .input { flex: 1; min-width: 0; font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted); }
-  .btn { flex: none; display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border: 1px solid var(--line2); border-radius: 6px; background: none; color: var(--text); font-weight: 500; text-decoration: none; cursor: pointer; }
-  .btn:hover { border-color: #4a4e58; }
-  .btn.primary { border-color: var(--text); background: var(--text); color: var(--bg); }
-  .btn.small { height: 28px; padding: 0 10px; font-size: 12px; }
+  .dock { display: flex; align-items: stretch; gap: 14px; padding: 12px 16px 14px; overflow-x: auto; background: var(--panel); border-top: 2px solid var(--line); scrollbar-width: thin; scrollbar-color: var(--line3) transparent; }
+  .dock .gl { flex: none; align-self: center; writing-mode: vertical-rl; transform: rotate(180deg); font: 400 10px/1 var(--px); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+  .sty { flex: none; display: flex; flex-direction: column; gap: 5px; width: 168px; margin: 2px; padding: 0 0 9px; border: 0; background: var(--panel2); text-align: left; }
+  .sty:hover { --rc: var(--line3); }
+  .sty.on { --rc: var(--green); }
+  .sty .pv { position: relative; height: 86px; overflow: hidden; background: var(--thumb-bg, #1b1d22); background-size: 576px 324px; background-position: 30% 38%; image-rendering: pixelated; }
+  .sty .pv.bg-checker { background: #26282d; background-image: linear-gradient(45deg, #1d1f23 25%, transparent 25%, transparent 75%, #1d1f23 75%), linear-gradient(45deg, #1d1f23 25%, transparent 25%, transparent 75%, #1d1f23 75%);
+    background-size: 20px 20px; background-position: 0 0, 10px 10px; }
+  .sty .pv iframe { position: absolute; left: 50%; top: 50%; width: 900px; height: 320px; border: 0; background: transparent; transform: translate(-50%, -50%) scale(.3); pointer-events: none; opacity: 0; transition: opacity .25s; }
+  .sty .pv iframe.ready { opacity: 1; }
+  .sty .tn { padding: 2px 10px 0; font: 400 11px/1.2 var(--px); letter-spacing: .04em; text-transform: uppercase; color: var(--text); }
+  .sty.on .tn { color: var(--green); }
+  .sty .td { padding: 0 10px; font-size: 11px; line-height: 1.3; color: var(--muted); }
+
+  .out { display: grid; gap: 8px; padding: 12px 16px 14px; background: var(--panel); border-top: 2px solid var(--line); }
+  .url { display: flex; align-items: center; gap: 8px; }
+  .url .input { flex: 1; min-width: 0; font: 400 12px/1 'Geist Mono', monospace; color: var(--muted); }
   .hint { margin: 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
-  .hint b { font-weight: 500; color: var(--text); }
+  .hint b { color: var(--text); font-weight: 500; }
+  .hint .sz { padding: 1px 5px; background: var(--raise); color: var(--green); font: 400 11px/1 var(--px); white-space: nowrap; }
 
-  @media (max-width: 860px) {
-    .app { grid-template-columns: minmax(0, 1fr); height: auto; }
-    aside { border-right: 0; border-bottom: 1px solid var(--line); }
-    main { grid-template-rows: auto 520px auto; }
+  dialog { width: min(560px, calc(100vw - 32px)); padding: 20px; border: 0; background: var(--panel); color: var(--text); --rc: var(--gray); }
+  dialog::backdrop { background: rgba(0, 0, 0, .65); }
+  dialog h3 { margin: 0 0 6px; font: 400 13px/1.2 var(--px); letter-spacing: .04em; text-transform: uppercase; }
+  dialog p { margin: 0 0 12px; font-size: 12px; color: var(--muted); }
+  dialog textarea { display: block; width: calc(100% - 4px); height: 96px; margin: 2px; padding: 10px; border: 0; background: var(--bg); outline: none; resize: vertical;
+    font: 400 12px/1.5 'Geist Mono', monospace; box-shadow: 0 -2px 0 0 var(--line2), 0 2px 0 0 var(--line2), -2px 0 0 0 var(--line2), 2px 0 0 0 var(--line2); }
+  dialog .acts { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  dialog .err { margin-right: auto; font-size: 12px; color: var(--bad); }
+
+  @media (max-width: 980px) {
+    .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; height: auto; }
+    .top { flex-wrap: wrap; gap: 10px; padding: 10px 16px; }
+    .modes { order: 3; width: 100%; margin: 0; }
+    .side { order: 3; overflow: visible; border-right: 0; }
+    .main { grid-template-rows: auto 56vh auto auto; }
+  }
+  @media (max-width: 560px) {
+    .top .acts .btn { padding: 0 8px; }
+    .logo b { font-size: 13px; }
   }
 </style>
 </head>
 <body>
 <div class="app">
-  <aside>
-    <div class="brand">
-      <div><h1>MCSR Ranked overlay</h1><p>Stream overlay for OBS</p></div>
-      <button class="btn small" id="reset" type="button">Reset</button>
+  <header class="top">
+    <a class="logo" href="https://github.com/orqz/mcsr-overlay" target="_blank" rel="noopener" title="mcsr-overlay on GitHub"><span class="rk" id="logo-rk" style="width:30px;height:30px"></span><b><i>MCSR</i> OVERLAY</b></a>
+    <nav class="modes">
+      <button type="button" class="tab" data-mode="overlay">Overlay</button>
+      <button type="button" class="tab" data-mode="hud">Live HUD<span class="new">NEW</span></button>
+    </nav>
+    <span class="sp"></span>
+    <div class="acts">
+      <button type="button" class="btn" id="undo" title="Undo (Ctrl+Z)" disabled>Undo</button>
+      <button type="button" class="btn" id="import" title="Paste an overlay or HUD URL to keep editing it">Import URL</button>
+      <button type="button" class="btn" id="reset">Reset</button>
     </div>
-    <form id="form" autocomplete="off" onsubmit="return false"></form>
+  </header>
+
+  <aside class="side">
+    <section class="grp">
+      <h2>Player</h2>
+      <input class="input mc" id="u" type="text" placeholder="Minecraft username" spellcheck="false" autocomplete="off" aria-label="Minecraft username">
+      <div class="status" id="status"><span class="dot"></span>Loading preview…</div>
+      <input class="input" id="label" type="text" data-only="overlay" placeholder="Display name (optional)" spellcheck="false" autocomplete="off" aria-label="Display name">
+    </section>
+    <form id="form" data-only="overlay" autocomplete="off" onsubmit="return false"></form>
+    <form id="hudform" data-only="hud" autocomplete="off" onsubmit="return false"></form>
   </aside>
-  <main>
-    <div class="bar">
-      <span class="lbl">Preview</span>
-      <div class="seg" id="stagebg">
-        <button type="button" data-bg="game">Gameplay</button>
-        <button type="button" data-bg="dark">Dark</button>
-        <button type="button" data-bg="light">Bright</button>
-        <button type="button" data-bg="green">Green</button>
-        <button type="button" data-bg="checker">Transparent</button>
-      </div>
-      <span class="sp"></span>
-      <button class="btn small" id="test" type="button">Test popup</button>
+
+  <main class="main">
+    <div class="tools">
+      <div class="tg"><span class="k">Scene</span><div class="seg" id="scenes"></div></div>
+      <div class="tg"><span class="k">View</span><div class="seg" id="views">
+        <button type="button" data-view="stream" title="The whole 1920×1080 stream">Stream</button>
+        <button type="button" data-view="1x" title="Actual size">100%</button>
+        <button type="button" data-view="2x">200%</button></div></div>
+      <div class="tg"><div class="chips"><button type="button" class="chip" id="gui" title="Hotbar and hearts in the scene">Game HUD</button><button type="button" class="chip" id="box" title="The area your OBS source covers">Source box</button></div></div>
     </div>
-    <div class="stage bg-dark" id="stage"><iframe id="frame" title="Overlay preview"></iframe></div>
+    <div class="stage" id="stage">
+      <div class="float" data-only="overlay"><span class="k">Simulate</span>
+        <button type="button" class="btn sm win" data-sim="win" title="A made-up win: popup, elo and session">+ Win</button>
+        <button type="button" class="btn sm loss" data-sim="loss" title="A made-up loss">+ Loss</button>
+        <button type="button" class="btn sm" id="simclear" title="Back to the real data">Clear</button></div>
+      <div class="float" data-only="hud"><span class="k">Demo run</span>
+        <div class="seg" id="speeds"><button type="button" data-speed="20">20×</button><button type="button" data-speed="40">40×</button></div>
+        <button type="button" class="btn sm" id="replay">Replay</button></div>
+      <div class="scene" id="scene">
+        <iframe id="frame" title="Overlay preview"></iframe>
+        <iframe id="hudframe" title="HUD preview" style="visibility:hidden"></iframe>
+        <div class="bounds" id="bounds" hidden><span></span></div>
+      </div>
+    </div>
+    <div class="dock" id="dock" data-only="overlay"></div>
     <div class="out">
       <div class="url">
-        <input class="input" id="url" readonly spellcheck="false">
-        <button class="btn primary" id="copy" type="button">Copy URL</button>
+        <input class="input" id="url" readonly spellcheck="false" aria-label="Overlay URL">
+        <button type="button" class="btn primary" id="copy">Copy URL</button>
         <a class="btn" id="open" target="_blank" rel="noopener">Open</a>
       </div>
-      <p class="hint">
-        In OBS: <b>Sources → + → Browser</b>, untick <b>Local file</b>, paste the URL, and set the size to <b id="size">—</b>.
-        It refreshes on its own every <span id="every">30s</span>; ticking <b>Shutdown source when not visible</b> is fine. To start a new session, right-click the source → <b>Interact</b> and double-click the session.
+      <p class="hint" data-only="overlay">
+        In OBS: <b>Sources → + → Browser</b>, untick <b>Local file</b>, paste the URL, size it <span class="sz" id="size">—</span>.
+        It refreshes every <span id="every">30s</span>. To start a new session, right-click the source → <b>Interact</b> and double-click the session.
+      </p>
+      <p class="hint" data-only="hud">
+        Runs from the helper on your PC, not this site: start <b>live/mcsr-live.py</b>, then add a <b>Browser</b> source with this URL, size <span class="sz" id="hsize">—</span> at 100% transform. Use <b>Scale</b> to resize it.
       </p>
     </div>
   </main>
 </div>
 
+<dialog id="dlg">
+  <h3>Import a URL</h3>
+  <p>Paste the URL from your OBS source (overlay or HUD) and keep editing it here.</p>
+  <textarea id="dlg-text" spellcheck="false" placeholder="https://orqz.github.io/mcsr-overlay/overlay.html?u=…"></textarea>
+  <div class="acts"><span class="err" id="dlg-err"></span><button type="button" class="btn" id="dlg-cancel">Cancel</button><button type="button" class="btn primary" id="dlg-load">Load</button></div>
+</dialog>
+
+<script src="scene.js"></script>
 <script>
 (() => {
   'use strict';
-  const $ = s => document.querySelector(s);
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const STORE = 'mcsr-overlay:customizer:v3';
+  const SW = 1920, SH = 1080;
+  const load = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+  const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const hex6 = h => (h.length === 3 ? h.split('').map(c => c + c).join('') : h).toLowerCase();
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+
+  // Where each division sits on MCSR Ranked's badge sprite (the image itself comes from the overlay)
+  const SPRITE_ROWS = [
+    ['Coal I', 'Coal II', 'Coal III', 'Iron I', 'Iron II', 'Iron III'],
+    ['Gold I', 'Gold II', 'Gold III', 'Emerald I', 'Emerald II', 'Emerald III'],
+    ['Diamond I', 'Diamond II', 'Diamond III', 'Netherite', 'Unrated'],
+  ];
+  function rkPos(name, px) {
+    let row = SPRITE_ROWS.findIndex(r => r.includes(name));
+    if (row < 0) row = 2;
+    const col = Math.max(0, SPRITE_ROWS[row].indexOf(row === 2 && !SPRITE_ROWS[2].includes(name) ? 'Unrated' : name));
+    return `width:${px}px;height:${px}px;background-size:${px * 6}px ${px * 3}px;background-position:${-col * px}px ${-row * px}px`;
+  }
+  const rk = (name, px) => `<span class="rk" style="${rkPos(name, px)}"></span>`;
 
   // Wireframe thumbnails for the layout picker (120×56, drawn in currentColor).
   const wire = inner => `<svg viewBox="0 0 120 56" fill="currentColor" aria-hidden="true">${inner}</svg>`;
   const rows = (x, y0, n, gap) => Array.from({ length: n }, (_, i) => {
     const y = y0 + i * gap;
-    return `<rect x="${x}" y="${y}" width="3" height="3" rx=".5" opacity=".9"/><rect x="${x + 6}" y="${y}" width="18" height="3" rx="1" opacity=".5"/><rect x="${x + 32}" y="${y}" width="8" height="3" rx="1" opacity=".35"/><rect x="${x + 43}" y="${y}" width="6" height="3" rx="1" opacity=".7"/>`;
+    return `<rect x="${x}" y="${y}" width="3" height="3" opacity=".9"/><rect x="${x + 6}" y="${y}" width="18" height="3" opacity=".5"/><rect x="${x + 32}" y="${y}" width="8" height="3" opacity=".35"/><rect x="${x + 43}" y="${y}" width="6" height="3" opacity=".7"/>`;
   }).join('');
   const LAYOUTS = [
     ['card', 'Card', 'Everything, stacked', wire(
-      `<rect x="33" y="2" width="54" height="52" rx="4" fill="none" stroke="currentColor" stroke-opacity=".35"/>
-       <rect x="38" y="7" width="8" height="8" rx="1.5" opacity=".6"/><rect x="49" y="8" width="16" height="3" rx="1" opacity=".8"/><rect x="49" y="12.5" width="9" height="2" rx="1" opacity=".4"/>
-       <rect x="71" y="7" width="11" height="6" rx="1" opacity=".9"/><rect x="38" y="19" width="44" height="1" opacity=".3"/><rect x="38" y="19" width="26" height="1" opacity=".8"/>
-       <rect x="38" y="24" width="11" height="4" rx="1" opacity=".6"/><rect x="54" y="24" width="8" height="4" rx="1" opacity=".6"/><rect x="67" y="24" width="8" height="4" rx="1" opacity=".6"/>` + rows(36, 33, 4, 5))],
+      `<rect x="33" y="2" width="54" height="52" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+       <rect x="38" y="7" width="8" height="8" opacity=".6"/><rect x="49" y="8" width="16" height="3" opacity=".8"/><rect x="49" y="12.5" width="9" height="2" opacity=".4"/>
+       <rect x="71" y="7" width="11" height="6" opacity=".9"/><rect x="38" y="19" width="44" height="1" opacity=".3"/><rect x="38" y="19" width="26" height="1" opacity=".8"/>
+       <rect x="38" y="24" width="11" height="4" opacity=".6"/><rect x="54" y="24" width="8" height="4" opacity=".6"/><rect x="67" y="24" width="8" height="4" opacity=".6"/>` + rows(36, 33, 4, 5))],
     ['bar', 'Bar', 'One line, top or bottom', wire(
-      `<rect x="4" y="21" width="112" height="14" rx="3" fill="none" stroke="currentColor" stroke-opacity=".35"/>
-       <rect x="7" y="24" width="8" height="8" rx="1.5" opacity=".6"/><rect x="18" y="25" width="14" height="3" rx="1" opacity=".8"/><rect x="18" y="29.5" width="8" height="2" rx="1" opacity=".4"/>
-       <rect x="37" y="24" width="1" height="8" opacity=".3"/><rect x="42" y="25" width="10" height="5" rx="1" opacity=".9"/>
-       <rect x="57" y="26" width="9" height="4" rx="1" opacity=".55"/><rect x="70" y="26" width="9" height="4" rx="1" opacity=".55"/><rect x="83" y="26" width="7" height="4" rx="1" opacity=".55"/>
-       <rect x="94" y="24" width="1" height="8" opacity=".3"/><rect x="99" y="26" width="4" height="4" rx="1" opacity=".8"/><rect x="105" y="26" width="4" height="4" rx="1" opacity=".8"/><rect x="111" y="26" width="2" height="4" rx="1" opacity=".8"/>`)],
+      `<rect x="4" y="21" width="112" height="14" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+       <rect x="7" y="24" width="8" height="8" opacity=".6"/><rect x="18" y="25" width="14" height="3" opacity=".8"/><rect x="18" y="29.5" width="8" height="2" opacity=".4"/>
+       <rect x="37" y="24" width="1" height="8" opacity=".3"/><rect x="42" y="25" width="10" height="5" opacity=".9"/>
+       <rect x="57" y="26" width="9" height="4" opacity=".55"/><rect x="70" y="26" width="9" height="4" opacity=".55"/><rect x="83" y="26" width="7" height="4" opacity=".55"/>
+       <rect x="94" y="24" width="1" height="8" opacity=".3"/><rect x="99" y="26" width="4" height="4" opacity=".8"/><rect x="105" y="26" width="4" height="4" opacity=".8"/><rect x="111" y="26" width="2" height="4" opacity=".8"/>`)],
     ['compact', 'Compact', 'Just elo and session', wire(
-      `<rect x="28" y="16" width="64" height="24" rx="4" fill="none" stroke="currentColor" stroke-opacity=".35"/>
-       <rect x="33" y="21" width="12" height="12" rx="2" opacity=".6"/><rect x="49" y="22" width="16" height="3" rx="1" opacity=".8"/><rect x="49" y="27" width="10" height="2" rx="1" opacity=".4"/>
-       <rect x="72" y="21" width="15" height="8" rx="1" opacity=".9"/><rect x="76" y="31" width="11" height="2" rx="1" opacity=".4"/>
+      `<rect x="28" y="16" width="64" height="24" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+       <rect x="33" y="21" width="12" height="12" opacity=".6"/><rect x="49" y="22" width="16" height="3" opacity=".8"/><rect x="49" y="27" width="10" height="2" opacity=".4"/>
+       <rect x="72" y="21" width="15" height="8" opacity=".9"/><rect x="76" y="31" width="11" height="2" opacity=".4"/>
        <rect x="28.5" y="38" width="38" height="1.5" opacity=".8"/>`)],
     ['matches', 'Matches', 'Recent results only', wire(
-      `<rect x="33" y="4" width="54" height="48" rx="4" fill="none" stroke="currentColor" stroke-opacity=".35"/>
-       <rect x="38" y="9" width="14" height="3" rx="1" opacity=".8"/><rect x="55" y="9" width="10" height="3" rx="1" opacity=".4"/><rect x="73" y="9" width="9" height="3" rx="1" opacity=".5"/>
+      `<rect x="33" y="4" width="54" height="48" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+       <rect x="38" y="9" width="14" height="3" opacity=".8"/><rect x="55" y="9" width="10" height="3" opacity=".4"/><rect x="73" y="9" width="9" height="3" opacity=".5"/>
        <rect x="38" y="15" width="44" height="1" opacity=".3"/>` + rows(37, 20, 5, 6))],
   ];
 
-  // Previews for the style picker; the badge is MCSR's own sprite, sent by the overlay.
+  // Every style, as shown in the picker under the preview
   const STYLES = [
-    ['badge', 'Badge', 'Rank badge, no box', '<div class="sp sp-badge"><span class="rk"></span><div class="lines"><i></i><i style="width:70%;opacity:.5"></i></div></div>'],
-    ['tooltip', 'Tooltip', 'Minecraft item tooltip', '<div class="sp sp-tooltip"><span class="rk"></span><div class="lines"><i style="width:60%;background:#2ce0d8"></i><i style="width:85%;opacity:.5"></i><i style="width:45%;opacity:.5"></i></div></div>'],
-    ['banner', 'Banner', 'Broadcast graphics', '<div class="sp sp-banner"><div class="tl"><span class="rk"></span></div><div class="lines"><i style="width:55%"></i><i style="width:80%;background:#2ce0d8;opacity:.7"></i></div></div>'],
-    ['clean', 'Clean', 'Minimal panel', '<div class="sp sp-clean"><span class="hsq"></span><div class="lines"><i style="width:60%"></i><i style="width:40%;opacity:.5"></i></div><b></b></div>'],
+    ['badge', 'Badge', 'Rank badge, no box', 'Classic'],
+    ['tooltip', 'Tooltip', 'Item tooltip', 'Classic'],
+    ['banner', 'Banner', 'Broadcast graphics', 'Classic'],
+    ['clean', 'Clean', 'Minimal flat panel', 'Classic'],
+    ['scoreboard', 'Scoreboard', 'The sidebar, red scores', 'Minecraft'],
+    ['f3', 'F3', 'Debug screen lines', 'Minecraft'],
+    ['chat', 'Chat', 'Messages in chat', 'Minecraft'],
+    ['advancement', 'Advancement', 'The toast popup', 'Minecraft'],
+    ['inventory', 'Inventory', 'Container GUI, slots', 'Minecraft'],
+    ['bossbar', 'Boss bar', 'Tier progress as a bar', 'Minecraft'],
+    ['xp', 'XP bar', 'Elo as your level', 'Minecraft'],
+    ['buttons', 'Buttons', 'The game menu', 'Minecraft'],
+    ['ranked', 'Ranked', 'MCSR Ranked logo look', 'Minecraft'],
   ];
 
   // What to show. The third value lists the layouts an option applies to; it's hidden for the others.
@@ -237,66 +374,90 @@
     Violet: { bg: '120d1c', text: 'f3eefe', accent: 'a78bfa', muted: '9a8fb5', edge: '2a2140' },
     Amber: { bg: '17130c', text: 'fbf3e4', accent: 'f5b544', muted: 'a89a80', edge: '2e271a' },
     Emerald: { bg: '0b1510', text: 'eafbf1', accent: '34d399', muted: '86a897', edge: '1c2b23' },
+    Nether: { bg: '1c0807', text: 'ffece6', accent: 'ff7a2f', muted: 'b98a7e', edge: '3d1510' },
+    End: { bg: '100c18', text: 'f4f1ff', accent: 'd89cff', muted: 'a194ba', edge: '2a2140' },
   };
   const FONTS = [['rubik', 'Rubik'], ['mc', 'Monocraft'], ['geist', 'Geist'], ['inter', 'Inter'], ['pixel', 'Pixelify Sans'], ['mono', 'Geist Mono'], ['system', 'Segoe UI']];
+  const SCENES = [['overworld', 'Overworld'], ['nether', 'Nether'], ['end', 'End'], ['dark', 'Dark'], ['light', 'Bright'], ['green', 'Green'], ['checker', 'None']];
+  const FLAT = { dark: '#1b1d22', light: '#dfe1e6', green: '#00b140' };
+  const HUD_DEFAULTS = { scale: 1.4, bga: 84, live: true, refresh: 30, reset: 4, speed: 20 };
 
-  const frame = $('#frame'), stage = $('#stage'), form = $('#form');
-  let DEFAULTS = null, THEMES = null, SPRITE = '', S = null, size = null, pushTimer = 0;
+  const frame = $('#frame'), hudFrame = $('#hudframe'), stage = $('#stage'), sceneEl = $('#scene'), bounds = $('#bounds');
+  const form = $('#form'), hudForm = $('#hudform'), dock = $('#dock');
+  let DEFAULTS = null, THEMES = null, S = null, size = null, lastData = null, pushTimer = 0, hudTimer = 0, hudSrc = '';
+  let mode = load(STORE + ':mode') === 'hud' ? 'hud' : 'overlay';
+  let H = Object.assign({}, HUD_DEFAULTS, load(STORE + ':hud') || {});
+  let view = ['stream', '1x', '2x'].includes(load(STORE + ':view')) ? load(STORE + ':view') : '1x';
+  let sceneName = load(STORE + ':bg');
+  if (!SCENES.some(s => s[0] === sceneName)) sceneName = 'overworld'; // older versions saved 'game'
+  let gui = load(STORE + ':gui') !== false, showBox = load(STORE + ':box') !== false;
+  const thumbs = [];
   // The value a setting falls back to for the current style (styles bring their own colors and font).
   const fallback = k => (THEMES[S.style] && k in THEMES[S.style] ? THEMES[S.style][k] : DEFAULTS[k]);
 
-  const load = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
-  const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
-  const hex6 = h => (h.length === 3 ? h.split('').map(c => c + c).join('') : h).toLowerCase();
+  // ---------- undo ----------
+  const past = [], future = [];
+  let lastSnap = 0;
+  // Call before changing anything; quick runs of changes (a slider drag) undo as one.
+  function snapshot() {
+    const now = Date.now();
+    if (now - lastSnap > 700 || !past.length) {
+      past.push(JSON.stringify({ S, H }));
+      if (past.length > 80) past.shift();
+    }
+    lastSnap = now;
+    future.length = 0;
+  }
+  function travel(from, to) {
+    if (!from.length) return;
+    to.push(JSON.stringify({ S, H }));
+    const st = JSON.parse(from.pop());
+    S = st.S;
+    H = st.H;
+    lastSnap = 0;
+    changed(0);
+  }
+  const undo = () => travel(past, future), redo = () => travel(future, past);
 
   // ---------- controls ----------
   const forAttr = f => f ? ` data-for="${f}"` : '';
-  const seg = (k, label, opts, f) => `<div class="row"${forAttr(f)}><span class="lbl">${label}</span><div class="seg" data-k="${k}">` +
+  const seg = (k, label, opts, f, attr = 'k') => `<div class="row"${forAttr(f)}><span class="lbl">${label}</span><div class="seg" data-${attr}="${k}">` +
     opts.map(([v, l]) => `<button type="button" data-v="${v}">${l}</button>`).join('') + '</div></div>';
-  const range = (k, label, min, max, step, unit, f) => `<label class="row"${forAttr(f)}><span class="lbl">${label}</span><span class="rng">
-    <input type="range" data-k="${k}" min="${min}" max="${max}" step="${step}"><output data-out="${k}" data-unit="${unit}"></output></span></label>`;
-  const toggle = (k, label) => `<label class="row"><span class="lbl">${label}</span><span class="sw"><input type="checkbox" data-k="${k}"><i></i></span></label>`;
+  const range = (k, label, min, max, step, unit, f, attr = 'k') => `<label class="row"${forAttr(f)}><span class="lbl">${label}</span><span class="rng">
+    <input type="range" data-${attr}="${k}" min="${min}" max="${max}" step="${step}"><output data-out="${k}" data-unit="${unit}"></output></span></label>`;
+  const toggle = (k, label, attr = 'k') => `<label class="row"><span class="lbl">${label}</span><span class="sw"><input type="checkbox" data-${attr}="${k}"><i></i></span></label>`;
   const color = (k, label, auto) => `<div class="row"><span class="lbl">${label}</span><span class="clr">
-    <input type="color" data-k="${k}"><input class="input" type="text" data-hex="${k}" maxlength="7" spellcheck="false"${auto ? ' placeholder="Auto"' : ''}>
-    ${auto ? `<button type="button" class="chip" data-auto="${k}">Auto</button>` : ''}</span></div>`;
+    <input type="color" data-k="${k}" aria-label="${label}"><input class="input" type="text" data-hex="${k}" maxlength="7" spellcheck="false" aria-label="${label} hex"${auto ? ' placeholder="Auto"' : ''}>
+    ${auto ? `<button type="button" class="chip plain" data-auto="${k}">Auto</button>` : ''}</span></div>`;
+  const group = (id, title, body, open) => `<details class="grp" data-g="${id}"${open ? ' open' : ''}><summary>${title}</summary><div>${body}</div></details>`;
 
-  function buildForm() {
+  function buildForms() {
     const show = SHOW.map(([title, f, items]) => `<div data-for="${f}"><div class="sub">${title}</div>` +
       (title === 'Stats' ? seg('stats', 'From', [['season', 'This season'], ['total', 'All time']]) : '') +
       (title === 'Matches' ? range('matches', 'Shown', 0, 15, 1, '') : '') +
       `<div class="chips">${items.map(([k, l, ff]) => `<button type="button" class="chip" data-chip="${k}"${forAttr(ff)}>${l}</button>`).join('')}</div></div>`).join('');
 
     form.innerHTML = `
-      <section class="grp"><h2>Player</h2>
-        <input class="input" type="text" data-k="u" placeholder="Minecraft username or UUID" spellcheck="false">
-        <div class="status" id="status"><span class="dot"></span>Waiting for preview</div>
-        <input class="input" type="text" data-k="label" placeholder="Display name (optional)" spellcheck="false" style="margin-top:10px">
-      </section>
       <section class="grp"><h2>Layout</h2>
         <div class="tiles">${LAYOUTS.map(([v, n, d, svg]) => `<button type="button" class="tile" data-layout="${v}">${svg}<span class="tn">${n}</span><span class="td">${d}</span></button>`).join('')}</div>
+        <p class="note">Pick a style under the preview.</p>
       </section>
-      <section class="grp"><h2>Style</h2>
-        <div class="tiles">${STYLES.map(([v, n, d, prev]) => `<button type="button" class="tile" data-style="${v}">${prev}<span class="tn">${n}</span><span class="td">${d}</span></button>`).join('')}</div>
-        <div class="row" style="margin-top:8px"><span class="lbl">Background</span><div class="seg" id="bgmode">
-          <button type="button" data-bgmode="none">None</button><button type="button" data-bgmode="panel">Panel</button></div></div>
-      </section>
-      <section class="grp"><h2>Show</h2>${show}
-        <div class="sub">Progress</div>
+      ${group('show', 'Show', show + `<div class="sub">Progress</div>
         <label class="row" data-for="card bar compact"><span class="lbl">Rank goal</span><select class="input" data-k="goal">
           <option value="">Next division</option>${GOALS.map(g => `<option value="${g}">${g}</option>`).join('')}</select></label>
-        ${range('rotate', 'Rotate info every', 0, 30, 1, 's', 'compact')}
-      </section>
-      <section class="grp"><h2>Size and position</h2>
+        ${range('rotate', 'Rotate info every', 0, 30, 1, 's', 'compact')}`, true)}
+      ${group('size', 'Size and position', `
         <div class="row"><span class="lbl">Size</span><div class="seg" id="sizes">${SIZES.map(([v, l]) => `<button type="button" data-size="${v}">${l}</button>`).join('')}</div></div>
         ${range('scale', 'Scale', 50, 250, 5, '%')}
         ${range('width', 'Width', 260, 520, 10, '', 'card matches')}
         ${seg('align', 'Align', [['left', 'Left'], ['center', 'Center'], ['right', 'Right']])}
-        ${seg('valign', 'Anchor', [['top', 'Top'], ['bottom', 'Bottom']])}
-      </section>
-      <details class="grp" id="advanced"><summary>Advanced</summary>
+        ${seg('valign', 'Anchor', [['top', 'Top'], ['bottom', 'Bottom']])}`, true)}
+      ${group('look', 'Look', `
+        <div class="row"><span class="lbl">Background</span><div class="seg" id="bgmode">
+          <button type="button" data-bgmode="none">None</button><button type="button" data-bgmode="panel">Panel</button></div></div>
         <label class="row"><span class="lbl">Font</span><select class="input" data-k="font">${FONTS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></label>
         <div class="sub">Colors</div>
-        <div class="chips" style="margin-bottom:6px">${Object.keys(PALETTES).map(n => `<button type="button" class="chip" data-palette="${n}">${n}</button>`).join('')}</div>
+        <div class="chips" style="margin-bottom:8px">${Object.keys(PALETTES).map(n => `<button type="button" class="chip plain" data-palette="${n}">${n}</button>`).join('')}</div>
         ${color('bg', 'Background')}${range('bga', 'Opacity', 0, 100, 1, '%')}
         ${color('text', 'Text')}${color('muted', 'Muted text', true)}${color('accent', 'Accent', true)}${color('edge', 'Border', true)}
         ${color('win', 'Win')}${color('loss', 'Loss')}
@@ -304,40 +465,62 @@
         ${seg('fill', 'Fill', [['solid', 'Solid'], ['gradient', 'Gradient']])}
         ${seg('texture', 'Texture', [['none', 'None'], ['grid', 'Grid'], ['dots', 'Dots'], ['noise', 'Noise']])}
         ${range('radius', 'Corners', 0, 20, 1, '')}
-        ${toggle('border', 'Border')}${toggle('shadow', 'Drop shadow')}${toggle('tshadow', 'Text shadow')}
+        ${toggle('border', 'Border')}${toggle('shadow', 'Drop shadow')}${toggle('tshadow', 'Text shadow')}`)}
+      ${group('behavior', 'Behavior', `
         ${range('reset', 'New session after', 1, 24, 1, 'h')}
-        ${range('refresh', 'Refresh every', 15, 180, 5, 's')}
-      </details>`;
+        ${range('refresh', 'Refresh every', 15, 180, 5, 's')}`)}`;
 
-    const sprite = document.createElement('style');
-    sprite.textContent = `.sp .rk { background-image: url(${SPRITE}); background-repeat: no-repeat; }`;
-    document.head.appendChild(sprite);
+    hudForm.innerHTML = `
+      <section class="grp"><h2>Live HUD</h2>
+        ${range('scale', 'Scale', .5, 4, .1, '×', '', 'h')}
+        ${range('bga', 'Panel opacity', 0, 100, 1, '%', '', 'h')}
+        ${toggle('live', 'Live run row', 'h')}
+        <p class="note">One pill with your elo, tier, session, PB and last five games. While you're in a run a second row opens and grades every split against your own past runs.</p>
+      </section>
+      <section class="grp"><h2>Run the live helper</h2>
+        <ol class="steps">
+          <li>Play with <a href="https://github.com/RedLime/SpeedRunIGT" target="_blank" rel="noopener">SpeedRunIGT</a> installed; the helper reads the splits it writes.</li>
+          <li><a href="https://github.com/orqz/mcsr-overlay/archive/refs/heads/main.zip">Download this repo</a> and start the helper from its folder (Python 3, nothing to install):
+            <div class="code"><span id="cmd">python3 live/mcsr-live.py</span><button type="button" class="btn sm" data-copy="python3 live/mcsr-live.py">Copy</button></div>
+            On Windows: <code>py live\\mcsr-live.py</code></li>
+          <li>Add a <b>Browser</b> source in OBS with the URL below.</li>
+        </ol>
+        <p class="note">Without the helper the HUD still shows your stats; the live row just stays closed.</p>
+      </section>
+      ${group('hbehavior', 'Behavior', `
+        ${range('reset', 'New session after', 1, 24, 1, 'h', '', 'h')}
+        ${range('refresh', 'Refresh every', 15, 180, 5, 's', '', 'h')}`)}`;
 
-    const adv = $('#advanced');
-    adv.open = !!load(STORE + ':advanced');
-    adv.addEventListener('toggle', () => save(STORE + ':advanced', adv.open));
+    // remember which groups are open
+    const open = load(STORE + ':open') || {};
+    $$('details[data-g]').forEach(d => {
+      if (d.dataset.g in open) d.open = open[d.dataset.g];
+      d.addEventListener('toggle', () => { open[d.dataset.g] = d.open; save(STORE + ':open', open); });
+    });
 
     form.addEventListener('input', e => {
       const el = e.target, k = el.dataset.k, hx = el.dataset.hex;
       if (k) {
+        snapshot();
         if (el.type === 'checkbox') S[k] = el.checked;
         else if (el.type === 'range') S[k] = Number(el.value);
         else if (el.type === 'color') S[k] = el.value.slice(1);
         else S[k] = el.value.trim();
-        changed(k === 'u' ? 500 : 0);
+        changed(0);
       } else if (hx) {
         const v = el.value.replace('#', '').trim();
-        if (/^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) { S[hx] = v.toLowerCase(); changed(0); }
+        if (/^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) { snapshot(); S[hx] = v.toLowerCase(); changed(0); }
       }
     });
     form.addEventListener('click', e => {
-      const t = e.target.closest('[data-v], [data-chip], [data-layout], [data-style], [data-bgmode], [data-size], [data-auto], [data-palette]');
+      const t = e.target.closest('[data-v], [data-chip], [data-layout], [data-bgmode], [data-size], [data-auto], [data-palette]');
       if (!t) return;
+      snapshot();
       if (t.dataset.size) S.scale = Number(t.dataset.size);
       else if (t.dataset.auto) S[t.dataset.auto] = '';
       else if (t.dataset.palette) {
         const th = THEMES[S.style];
-        Object.assign(S, { bg: th.bg, text: th.text, win: th.win, loss: th.loss, accent: '', muted: '', edge: '' }, PALETTES[t.dataset.palette] || {});
+        Object.assign(S, { bg: th.bg, text: th.text, win: th.win, loss: th.loss, accent: th.accent || '', muted: th.muted || '', edge: th.edge || '' }, PALETTES[t.dataset.palette] || {});
       }
       else if (t.dataset.v) S[t.parentNode.dataset.k] = t.dataset.v;
       else if (t.dataset.chip) S[t.dataset.chip] = !S[t.dataset.chip];
@@ -345,11 +528,48 @@
         S.layout = t.dataset.layout;
         if (S.layout === 'matches' && !S.matches) S.matches = 5;
       }
-      else if (t.dataset.style) Object.assign(S, THEMES[t.dataset.style], { style: t.dataset.style });
       else if (t.dataset.bgmode === 'none') Object.assign(S, { bga: 0, tshadow: true });
-      else if (t.dataset.bgmode === 'panel') Object.assign(S, { bga: THEMES[S.style].bga || 88, tshadow: S.style === 'tooltip' });
+      else if (t.dataset.bgmode === 'panel') Object.assign(S, { bga: THEMES[S.style].bga || 88, tshadow: THEMES[S.style].bga ? THEMES[S.style].tshadow : true });
       changed(0);
     });
+
+    hudForm.addEventListener('input', e => {
+      const el = e.target, k = el.dataset.h;
+      if (!k) return;
+      snapshot();
+      H[k] = el.type === 'checkbox' ? el.checked : Number(el.value);
+      changed(0);
+    });
+  }
+
+  // The style picker: each one is the real overlay, in Compact, with your data.
+  function buildDock() {
+    let last = '';
+    dock.innerHTML = STYLES.map(([v, n, d, g]) => {
+      const gl = g !== last ? `<span class="gl">${(last = g)}</span>` : '';
+      return `${gl}<button type="button" class="sty" data-style="${v}" title="${n}: ${d}"><span class="pv"><iframe tabindex="-1" title="${n} preview" loading="lazy"
+        src="overlay.html?demo=1&style=${v}&layout=compact"></iframe></span><span class="tn">${n}</span><span class="td">${d}</span></button>`;
+    }).join('');
+    thumbs.push(...$$('.sty iframe'));
+    dock.addEventListener('click', e => {
+      const t = e.target.closest('[data-style]');
+      if (!t || t.dataset.style === S.style) return;
+      snapshot();
+      Object.assign(S, { accent: '', muted: '', edge: '' }, THEMES[t.dataset.style], { style: t.dataset.style });
+      changed(0);
+    });
+    dock.addEventListener('wheel', e => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || dock.scrollWidth <= dock.clientWidth) return;
+      dock.scrollLeft += e.deltaY;
+      e.preventDefault();
+    }, { passive: false });
+  }
+  function fitThumb(f, d) {
+    const box = f.parentNode, s = Math.min(1, (box.clientWidth - 14) / d.w, (box.clientHeight - 10) / d.h);
+    f.style.width = d.w + 'px';
+    f.style.height = d.h + 'px';
+    f.style.transform = `translate(-50%, -50%) scale(${s.toFixed(3)})`;
+    f.classList.add('ready');
   }
 
   function sync() {
@@ -368,17 +588,44 @@
     form.querySelectorAll('[data-chip]').forEach(b => b.classList.toggle('on', !!S[b.dataset.chip]));
     form.querySelectorAll('[data-layout]').forEach(b => b.classList.toggle('on', b.dataset.layout === S.layout));
     form.querySelectorAll('[data-for]').forEach(el => el.classList.toggle('hide', !el.dataset.for.split(' ').includes(S.layout)));
-    form.querySelectorAll('[data-style]').forEach(b => b.classList.toggle('on', b.dataset.style === S.style));
     form.querySelectorAll('[data-bgmode]').forEach(b => b.classList.toggle('on', b.dataset.bgmode === (S.bga === 0 ? 'none' : 'panel')));
+    dock.querySelectorAll('[data-style]').forEach(b => b.classList.toggle('on', b.dataset.style === S.style));
+
+    hudForm.querySelectorAll('[data-h]').forEach(el => {
+      const v = H[el.dataset.h];
+      if (el.type === 'checkbox') el.checked = !!v;
+      else if (el !== focused) el.value = v;
+    });
+    hudForm.querySelectorAll('[data-out]').forEach(el => {
+      const v = H[el.dataset.out];
+      el.textContent = el.dataset.out === 'scale' ? Number(v).toFixed(1) + '×' : v + el.dataset.unit;
+    });
+
+    if ($('#u') !== focused) $('#u').value = S.u;
+    if ($('#label') !== focused) $('#label').value = S.label;
+    $$('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+    $$('[data-only]').forEach(el => { el.hidden = el.dataset.only !== mode; });
+    $$('[data-scene]').forEach(b => b.classList.toggle('on', b.dataset.scene === sceneName));
+    $$('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
+    $$('[data-speed]').forEach(b => b.classList.toggle('on', Number(b.dataset.speed) === H.speed));
+    $('#gui').classList.toggle('on', gui);
+    $('#gui').disabled = !!FLAT[sceneName] || sceneName === 'checker';
+    $('#box').classList.toggle('on', showBox);
+    $('#undo').disabled = !past.length;
     $('#every').textContent = S.refresh + 's';
+    $('#open').textContent = mode === 'hud' ? 'Open demo' : 'Open';
   }
 
-  function changed(delay) {
+  function changed(delay = 0) {
     save(STORE, S);
+    save(STORE + ':hud', H);
     sync();
     updateUrl();
+    layoutStage();
     clearTimeout(pushTimer);
     pushTimer = setTimeout(push, delay);
+    clearTimeout(hudTimer);
+    hudTimer = setTimeout(loadHud, Math.max(delay, 450));
   }
 
   // ---------- output ----------
@@ -391,74 +638,249 @@
     }
     return new URL('overlay.html', location.href).href + '?' + p.toString();
   }
+  // The HUD is served by the helper on 127.0.0.1; the preview runs its demo from this site.
+  function hudUrl(preview) {
+    const p = new URLSearchParams();
+    if (preview) p.set('demo', H.speed);
+    if (S.u || !preview) p.set('u', S.u || 'YourName');
+    p.set('scale', Number(H.scale).toFixed(1));
+    if (H.bga !== HUD_DEFAULTS.bga) p.set('bga', H.bga);
+    if (!H.live && !preview) p.set('live', '0');
+    if (H.refresh !== HUD_DEFAULTS.refresh) p.set('refresh', H.refresh);
+    if (H.reset !== HUD_DEFAULTS.reset) p.set('reset', H.reset);
+    return (preview ? new URL('hud.html', location.href).href : 'http://127.0.0.1:7477/hud.html') + '?' + p.toString();
+  }
   function updateUrl() {
-    const url = overlayUrl();
+    if (!S) return;
+    const url = mode === 'hud' ? hudUrl(false) : overlayUrl();
     $('#url').value = url;
-    $('#open').href = url;
+    $('#open').href = mode === 'hud' ? hudUrl(true) : url;
   }
   function push() {
-    frame.contentWindow.postMessage({ type: 'mcsr:config', cfg: S }, '*');
+    if (S) frame.contentWindow.postMessage({ type: 'mcsr:config', cfg: S.u ? S : Object.assign({}, S, { demo: 1 }) }, '*');
+  }
+  function loadHud(force) {
+    if (mode !== 'hud' || !S) return;
+    const src = hudUrl(true);
+    if (src !== hudSrc || force === true) { hudSrc = src; hudFrame.src = src; }
   }
 
-  function fit() {
-    if (!size) return;
-    frame.style.width = Math.max(stage.clientWidth, size.w) + 'px';
-    frame.style.height = Math.max(stage.clientHeight, size.h) + 'px';
+  // ---------- stage: the overlay on a 1920×1080 scene ----------
+  function box() {
+    if (mode === 'hud') {
+      const k = H.scale / 1.4;
+      return { x: 0, y: 0, w: Math.ceil(640 * k / 10) * 10, h: Math.ceil(260 * k / 10) * 10 };
+    }
+    if (!size) return null;
+    return { w: size.w, h: size.h, x: S.align === 'right' ? SW - size.w : S.align === 'center' ? (SW - size.w) / 2 : 0, y: S.valign === 'bottom' ? SH - size.h : 0 };
   }
+  function layoutStage() {
+    const sw = stage.clientWidth, sh = stage.clientHeight;
+    if (!sw || !sh || !S) return;
+    const b = box();
+    let z, tx, ty;
+    if (view === 'stream') {
+      z = Math.min((sw - 40) / SW, (sh - 40) / SH);
+      tx = (sw - SW * z) / 2;
+      ty = (sh - SH * z) / 2;
+    } else {
+      // actual size: keep the overlay's corner of the stream in view; if it's wider than the
+      // stage, line up the side it's anchored to
+      z = view === '2x' ? 2 : 1;
+      const fit = (stg, len, pos, extent, end) => {
+        if (len * z <= stg) return (stg - len * z) / 2;
+        const want = !extent ? 0 : extent * z <= stg - 32 ? stg / 2 - (pos + extent / 2) * z : end ? stg - 16 - (pos + extent) * z : 16 - pos * z;
+        return clamp(want, stg - len * z, 0);
+      };
+      tx = fit(sw, SW, b ? b.x : 0, b ? b.w : 0, S.align === 'right' && mode !== 'hud');
+      ty = fit(sh, SH, b ? b.y : 0, b ? b.h : 0, S.valign === 'bottom' && mode !== 'hud');
+    }
+    sceneEl.style.transform = `translate(${Math.round(tx)}px, ${Math.round(ty)}px) scale(${z})`;
+    bounds.hidden = !b || !showBox;
+    if (b) {
+      Object.assign(bounds.style, { left: b.x + 'px', top: b.y + 'px', width: b.w + 'px', height: b.h + 'px', outlineWidth: (2 / z).toFixed(2) + 'px' });
+      bounds.classList.toggle('up', b.y + b.h > SH - 60);
+      bounds.classList.toggle('right', b.x + b.w > SW - 200);
+      const tag = bounds.firstChild;
+      tag.textContent = `OBS ${b.w} × ${b.h}`;
+      tag.style.transform = `scale(${(1 / z).toFixed(3)})`;
+    }
+    const sz = b ? `${b.w} × ${b.h}` : '—';
+    $(mode === 'hud' ? '#hsize' : '#size').textContent = sz;
+  }
+  function applyScene() {
+    const flat = FLAT[sceneName], checker = sceneName === 'checker';
+    sceneEl.className = 'scene' + (checker ? ' bg-checker' : '');
+    sceneEl.style.background = flat || '';
+    if (!flat && !checker) sceneEl.style.backgroundImage = `url(${MCSRScene.url(sceneName, gui)})`;
+    // the style picker sits on the same scene, without the hotbar
+    const tb = flat || (checker ? '' : `url(${MCSRScene.url(sceneName, false)})`);
+    $$('.sty .pv').forEach(pv => { pv.classList.toggle('bg-checker', checker); pv.style.setProperty('--thumb-bg', tb || 'none'); });
+    save(STORE + ':bg', sceneName);
+  }
+
   function showStatus(d) {
     const el = $('#status');
-    if (!el) return;
-    el.className = 'status ' + (d.ok ? 'ok' : 'bad');
-    el.innerHTML = '<span class="dot"></span>' + (d.ok
-      ? `${d.nickname} · ${d.elo == null ? 'unrated' : d.elo + ' elo'}`
-      : d.notFound ? 'No ranked profile with that name' : 'Can’t reach the MCSR Ranked API');
+    el.className = 'status' + (d.ok ? '' : ' bad');
+    if (d.ok && d.demo) el.innerHTML = `${rk(d.tier, 15)}<span>No name yet, showing a <b>demo player</b></span>`;
+    else if (d.ok) el.innerHTML = `${rk(d.tier || 'Unrated', 15)}<span><b>${esc(d.nickname)}</b> · ${esc(d.tier || 'Unrated')} · ${d.elo == null ? 'unrated' : d.elo + ' elo'}</span>`;
+    else el.innerHTML = `<span class="dot"></span><span>${d.notFound ? 'No ranked profile with that name' : 'Can’t reach the MCSR Ranked API'}</span>`;
   }
 
-  // ---------- wiring ----------
-  window.addEventListener('message', e => {
-    if (e.source !== frame.contentWindow || !e.data) return;
-    const d = e.data;
-    if (d.type === 'mcsr:ready') {
-      if (!DEFAULTS) {
-        DEFAULTS = d.defaults;
-        THEMES = d.themes;
-        SPRITE = d.sprite;
-        const saved = load(STORE) || { u: 'orq2' };
-        S = Object.assign({}, DEFAULTS);
-        for (const k in DEFAULTS) if (saved[k] !== undefined && typeof saved[k] === typeof DEFAULTS[k]) S[k] = saved[k];
-        buildForm();
-        sync();
-        updateUrl();
+  function setMode(m) {
+    mode = m;
+    save(STORE + ':mode', m);
+    frame.style.visibility = m === 'overlay' ? 'visible' : 'hidden';
+    hudFrame.style.visibility = m === 'hud' ? 'visible' : 'hidden';
+    if (m === 'hud') loadHud(true);
+    else { hudSrc = ''; hudFrame.src = 'about:blank'; }
+    sync();
+    updateUrl();
+    layoutStage();
+  }
+
+  // ---------- import: an overlay or HUD URL back into the editor ----------
+  function importUrl(text) {
+    let url;
+    try { url = new URL(String(text).trim(), location.href); } catch (e) { return false; }
+    const raw = {};
+    new URLSearchParams(url.search).forEach((v, k) => { raw[k] = v; });
+    new URLSearchParams(url.hash.replace(/^#/, '')).forEach((v, k) => { raw[k] = v; });
+    if (!Object.keys(raw).length) return false;
+    const num = (v, d) => isFinite(parseFloat(v)) ? parseFloat(v) : d;
+    if (/hud\.html$/.test(url.pathname)) {
+      if (raw.u || raw.user) S.u = raw.u || raw.user;
+      H = Object.assign({}, HUD_DEFAULTS, { speed: H.speed, scale: clamp(num(raw.scale, 1), .5, 4), bga: clamp(num(raw.bga, 84), 0, 100),
+        live: raw.live !== '0', refresh: Math.max(15, num(raw.refresh, 30)), reset: num(raw.reset, 4) });
+      mode = 'hud';
+    } else {
+      const style = THEMES[raw.style] ? raw.style : DEFAULTS.style;
+      const next = Object.assign({}, DEFAULTS, THEMES[style], { style });
+      for (const k in DEFAULTS) {
+        const v = raw[k];
+        if (v === undefined || v === '' || k === 'style') continue;
+        const t = typeof DEFAULTS[k];
+        next[k] = t === 'number' ? num(v, next[k]) : t === 'boolean' ? /^(1|true|on|yes)$/i.test(v) : String(v);
       }
-      push();
-    } else if (d.type === 'mcsr:size') {
-      size = d;
-      $('#size').textContent = `${Math.ceil(d.w / 10) * 10} × ${Math.ceil(d.h / 10) * 10}`;
-      fit();
-    } else if (d.type === 'mcsr:status') {
-      showStatus(d);
+      if (!raw.u && (raw.user || raw.username)) next.u = raw.user || raw.username;
+      if (next.u === 'YourName') next.u = '';
+      S = next;
+      mode = 'overlay';
     }
+    return true;
+  }
+
+  // ---------- startup ----------
+  function init(d) {
+    DEFAULTS = d.defaults;
+    THEMES = d.themes;
+    document.documentElement.style.setProperty('--sprite', `url(${d.sprite})`);
+    $('#logo-rk').setAttribute('style', rkPos('Diamond III', 30));
+    const saved = load(STORE) || {};
+    S = Object.assign({}, DEFAULTS);
+    for (const k in DEFAULTS) if (saved[k] !== undefined && typeof saved[k] === typeof DEFAULTS[k]) S[k] = saved[k];
+    // index.html?u=…&style=… opens with those settings, like Import
+    if (location.search.length > 1) importUrl(location.href);
+    buildForms();
+    buildDock();
+    applyScene();
+    setMode(mode);
+    changed(0);
+  }
+
+  window.addEventListener('message', e => {
+    const d = e.data;
+    if (!d || typeof d !== 'object') return;
+    if (e.source === frame.contentWindow) {
+      if (d.type === 'mcsr:ready') { if (!DEFAULTS) init(d); push(); }
+      else if (d.type === 'mcsr:size') { size = { w: Math.ceil(d.w / 10) * 10, h: Math.ceil(d.h / 10) * 10 }; layoutStage(); }
+      else if (d.type === 'mcsr:status') showStatus(d);
+      else if (d.type === 'mcsr:data') { lastData = d; thumbs.forEach(f => f.contentWindow && f.contentWindow.postMessage(d, '*')); }
+      return;
+    }
+    const f = thumbs.find(t => t.contentWindow === e.source);
+    if (!f) return;
+    if (d.type === 'mcsr:size') fitThumb(f, d);
+    else if (d.type === 'mcsr:ready' && lastData) f.contentWindow.postMessage(lastData, '*');
   });
 
-  $('#reset').addEventListener('click', () => { if (S) { S = Object.assign({}, DEFAULTS, { u: S.u }); changed(0); } });
-  $('#test').addEventListener('click', () => frame.contentWindow.postMessage({ type: 'mcsr:test-popup' }, '*'));
-  $('#copy').addEventListener('click', async e => {
-    const btn = e.currentTarget, input = $('#url');
-    try { await navigator.clipboard.writeText(input.value); }
-    catch (err) { input.select(); document.execCommand('copy'); }
-    btn.textContent = 'Copied';
-    setTimeout(() => { btn.textContent = 'Copy URL'; }, 1400);
+  $('#scenes').innerHTML = SCENES.map(([v, l]) => `<button type="button" data-scene="${v}">${l}</button>`).join('');
+  $('#scenes').addEventListener('click', e => {
+    const b = e.target.closest('[data-scene]');
+    if (!b || !S) return;
+    sceneName = b.dataset.scene;
+    applyScene();
+    sync();
+  });
+  $('#views').addEventListener('click', e => {
+    const b = e.target.closest('[data-view]');
+    if (!b || !S) return;
+    view = b.dataset.view;
+    save(STORE + ':view', view);
+    sync();
+    layoutStage();
+  });
+  $('#gui').addEventListener('click', () => { gui = !gui; save(STORE + ':gui', gui); applyScene(); sync(); });
+  $('#box').addEventListener('click', () => { showBox = !showBox; save(STORE + ':box', showBox); sync(); layoutStage(); });
+  $$('[data-sim]').forEach(b => b.addEventListener('click', () => frame.contentWindow.postMessage({ type: 'mcsr:simulate', res: b.dataset.sim }, '*')));
+  $('#simclear').addEventListener('click', () => frame.contentWindow.postMessage({ type: 'mcsr:simulate-clear' }, '*'));
+  $('#speeds').addEventListener('click', e => {
+    const b = e.target.closest('[data-speed]');
+    if (!b || !S) return;
+    H.speed = Number(b.dataset.speed);
+    changed(0);
+  });
+  $('#replay').addEventListener('click', () => loadHud(true));
+  $$('[data-mode]').forEach(b => b.addEventListener('click', () => { if (S && b.dataset.mode !== mode) setMode(b.dataset.mode); }));
+
+  $('#u').addEventListener('input', e => { if (!S) return; snapshot(); S.u = e.target.value.trim(); changed(500); });
+  $('#label').addEventListener('input', e => { if (!S) return; snapshot(); S.label = e.target.value.trim(); changed(0); });
+  $('#undo').addEventListener('click', undo);
+  $('#reset').addEventListener('click', () => {
+    if (!S) return;
+    snapshot();
+    if (mode === 'hud') H = Object.assign({}, HUD_DEFAULTS, { speed: H.speed });
+    else S = Object.assign({}, DEFAULTS, { u: S.u });
+    changed(0);
+  });
+  document.addEventListener('keydown', e => {
+    if (!(e.ctrlKey || e.metaKey) || e.target.matches('input[type=text], textarea')) return;
+    const k = e.key.toLowerCase();
+    if (k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+    else if (k === 'y') { e.preventDefault(); redo(); }
   });
 
-  const setBg = v => {
-    stage.className = 'stage bg-' + v;
-    document.querySelectorAll('#stagebg button').forEach(b => b.classList.toggle('on', b.dataset.bg === v));
-    save(STORE + ':bg', v);
-  };
-  $('#stagebg').addEventListener('click', e => { const b = e.target.closest('[data-bg]'); if (b) setBg(b.dataset.bg); });
-  setBg(load(STORE + ':bg') || 'dark');
-  window.addEventListener('resize', fit);
+  async function copy(text, btn, label) {
+    try { await navigator.clipboard.writeText(text); }
+    catch (err) {
+      const t = document.createElement('textarea');
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand('copy');
+      t.remove();
+    }
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = label; }, 1400);
+  }
+  $('#copy').addEventListener('click', e => copy($('#url').value, e.currentTarget, 'Copy URL'));
+  document.addEventListener('click', e => { const b = e.target.closest('[data-copy]'); if (b) copy(b.dataset.copy, b, 'Copy'); });
 
+  const dlg = $('#dlg');
+  $('#import').addEventListener('click', () => { if (!S) return; $('#dlg-err').textContent = ''; $('#dlg-text').value = ''; dlg.showModal(); $('#dlg-text').focus(); });
+  $('#dlg-cancel').addEventListener('click', () => dlg.close());
+  $('#dlg-load').addEventListener('click', () => {
+    const before = JSON.stringify({ S, H }), prevMode = mode;
+    if (!importUrl($('#dlg-text').value)) { $('#dlg-err').textContent = 'That doesn’t look like an overlay or HUD URL.'; return; }
+    past.push(before);
+    future.length = 0;
+    dlg.close();
+    if (mode !== prevMode) setMode(mode);
+    changed(0);
+  });
+
+  window.addEventListener('resize', layoutStage);
+  if (window.ResizeObserver) new ResizeObserver(layoutStage).observe(stage);
   frame.src = 'overlay.html?preview=1'; // set after the listener so the ready message isn't missed
 })();
 </script>
