@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="350" viewBox="0 0 920 350" shape-rendering="crispEdges">
+  <title>How the live HUD works: SpeedRunIGT writes splits, live/mcsr-live.py reads them and serves the HUD on 127.0.0.1:7477, OBS shows it, and the MCSR Ranked API supplies elo and matches.</title>
+  <style>
+    .t { font: 15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #e8ecec; }
+    .s { font: 12px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #8a9495; }
+    .c { font: 11.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #9be36a; }
+    .k { font: 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #5a6364; letter-spacing: .08em; }
+    .a { font: 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #8a9495; }
+  </style>
+  <rect width="920" height="350" fill="#0a0c0d"/>
+  <text class="k" x="24" y="30">HOW THE LIVE HUD WORKS</text>
+
+  <!-- pixel frames: a box plus a 2px ring with the corners left out -->
+  <g id="box-a">
+    <rect x="24" y="52" width="236" height="140" fill="#12181a"/>
+    <path d="M24 50h236v2H24zM24 192h236v2H24zM22 52h2v140h-2zM260 52h2v140h-2z" fill="#3e4849"/>
+    <rect x="40" y="70" width="10" height="10" fill="#36c2a6"/>
+    <text class="t" x="58" y="80">SpeedRunIGT</text>
+    <text class="s" x="40" y="104">in your Minecraft instance</text>
+    <text class="c" x="40" y="132">…/speedrunigt/events.log</text>
+    <text class="s" x="40" y="150">every split of this run</text>
+    <text class="c" x="40" y="172">~/speedrunigt/records/</text>
+  </g>
+
+  <g id="box-b">
+    <rect x="342" y="52" width="236" height="140" fill="#12181a"/>
+    <path d="M342 50h236v2H342zM342 192h236v2H342zM340 52h2v140h-2zM578 52h2v140h-2z" fill="#76c043"/>
+    <rect x="358" y="70" width="10" height="10" fill="#76c043"/>
+    <text class="t" x="376" y="80">live/mcsr-live.py</text>
+    <text class="s" x="358" y="104">Python 3, nothing to install</text>
+    <text class="c" x="358" y="132">127.0.0.1:7477</text>
+    <text class="s" x="358" y="150">averages, best splits and PB</text>
+    <text class="s" x="358" y="170">from your own past runs</text>
+  </g>
+
+  <g id="box-c">
+    <rect x="660" y="52" width="236" height="140" fill="#12181a"/>
+    <path d="M660 50h236v2H660zM660 192h236v2H660zM658 52h2v140h-2zM896 52h2v140h-2z" fill="#3e4849"/>
+    <rect x="676" y="70" width="10" height="10" fill="#ffc94d"/>
+    <text class="t" x="694" y="80">OBS Browser source</text>
+    <text class="c" x="676" y="104">hud.html?u=YourName</text>
+    <text class="s" x="676" y="132">grades every split, tracks</text>
+    <text class="s" x="676" y="150">PB pace, shows callouts and</text>
+    <text class="s" x="676" y="168">the match result</text>
+  </g>
+
+  <g id="box-d">
+    <rect x="660" y="250" width="236" height="76" fill="#12181a"/>
+    <path d="M660 248h236v2H660zM660 326h236v2H660zM658 250h2v76h-2zM896 250h2v76h-2z" fill="#3e4849"/>
+    <rect x="676" y="268" width="10" height="10" fill="#2ce0d8"/>
+    <text class="t" x="694" y="278">MCSR Ranked API</text>
+    <text class="s" x="676" y="304">elo, tier, session, last five</text>
+  </g>
+
+  <!-- arrows -->
+  <g fill="#5a6364">
+    <rect x="268" y="121" width="58" height="2"/><path d="M326 116l8 6-8 6z" shape-rendering="auto"/>
+    <rect x="586" y="121" width="58" height="2"/><path d="M644 116l8 6-8 6z" shape-rendering="auto"/>
+    <rect x="777" y="208" width="2" height="34"/><path d="M772 208l6-8 6 8z" shape-rendering="auto"/>
+  </g>
+  <text class="a" x="301" y="111" text-anchor="middle">reads</text>
+  <text class="a" x="619" y="111" text-anchor="middle">/api/live</text>
+  <text class="a" x="619" y="140" text-anchor="middle">every 1s</text>
+  <text class="a" x="790" y="230">every 30s</text>
+
+  <text class="s" x="24" y="250">The helper also serves the HUD itself:</text>
+  <text class="s" x="24" y="268">Chrome, and so OBS, won't let a public site</text>
+  <text class="s" x="24" y="286">read from 127.0.0.1.</text>
+  <text class="s" x="24" y="314">Without the helper the HUD still shows</text>
+  <text class="s" x="24" y="332">your stats; the live row stays closed.</text>
+</svg>
