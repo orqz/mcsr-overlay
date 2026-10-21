@@ -238,6 +238,7 @@
       <div class="tg"><span class="k">Scene</span><div class="seg" id="scenes"></div></div>
       <div class="tg"><span class="k">View</span><div class="seg" id="views">
         <button type="button" data-view="stream" title="The whole 1920×1080 stream">Stream</button>
+        <button type="button" data-view="fit" title="Zoomed to the overlay">Fit</button>
         <button type="button" data-view="1x" title="Actual size">100%</button>
         <button type="button" data-view="2x">200%</button></div></div>
       <div class="tg"><div class="chips"><button type="button" class="chip" id="gui" title="Hotbar and hearts in the scene">Game HUD</button><button type="button" class="chip" id="box" title="The area your OBS source covers">Source box</button></div></div>
@@ -381,13 +382,15 @@
   const SCENES = [['overworld', 'Overworld'], ['nether', 'Nether'], ['end', 'End'], ['dark', 'Dark'], ['light', 'Bright'], ['green', 'Green'], ['checker', 'None']];
   const FLAT = { dark: '#1b1d22', light: '#dfe1e6', green: '#00b140' };
   const HUD_DEFAULTS = { scale: 1.4, bga: 84, live: true, refresh: 30, reset: 4, speed: 20 };
+  // Bump when the customizer needs a newer overlay.html, so a cached old one isn't used
+  const V = 2;
 
   const frame = $('#frame'), hudFrame = $('#hudframe'), stage = $('#stage'), sceneEl = $('#scene'), bounds = $('#bounds');
   const form = $('#form'), hudForm = $('#hudform'), dock = $('#dock');
   let DEFAULTS = null, THEMES = null, S = null, size = null, lastData = null, pushTimer = 0, hudTimer = 0, hudSrc = '';
   let mode = load(STORE + ':mode') === 'hud' ? 'hud' : 'overlay';
   let H = Object.assign({}, HUD_DEFAULTS, load(STORE + ':hud') || {});
-  let view = ['stream', '1x', '2x'].includes(load(STORE + ':view')) ? load(STORE + ':view') : '1x';
+  let view = ['stream', 'fit', '1x', '2x'].includes(load(STORE + ':view')) ? load(STORE + ':view') : 'fit';
   let sceneName = load(STORE + ':bg');
   if (!SCENES.some(s => s[0] === sceneName)) sceneName = 'overworld'; // older versions saved 'game'
   let gui = load(STORE + ':gui') !== false, showBox = load(STORE + ':box') !== false;
@@ -548,7 +551,7 @@
     dock.innerHTML = STYLES.map(([v, n, d, g]) => {
       const gl = g !== last ? `<span class="gl">${(last = g)}</span>` : '';
       return `${gl}<button type="button" class="sty" data-style="${v}" title="${n}: ${d}"><span class="pv"><iframe tabindex="-1" title="${n} preview" loading="lazy"
-        src="overlay.html?demo=1&style=${v}&layout=compact"></iframe></span><span class="tn">${n}</span><span class="td">${d}</span></button>`;
+        src="overlay.html?v=${V}&demo=1&style=${v}&layout=compact"></iframe></span><span class="tn">${n}</span><span class="td">${d}</span></button>`;
     }).join('');
     thumbs.push(...$$('.sty iframe'));
     dock.addEventListener('click', e => {
@@ -684,9 +687,9 @@
       tx = (sw - SW * z) / 2;
       ty = (sh - SH * z) / 2;
     } else {
-      // actual size: keep the overlay's corner of the stream in view; if it's wider than the
-      // stage, line up the side it's anchored to
-      z = view === '2x' ? 2 : 1;
+      // zoomed in (fit, 100%, 200%): keep the overlay's corner of the stream in view; if it's
+      // wider than the stage, line up the side it's anchored to
+      z = view === '2x' ? 2 : view === 'fit' && b ? clamp(Math.min((sw - 96) / b.w, (sh - 96) / b.h), .5, 2) : 1;
       const fit = (stg, len, pos, extent, end) => {
         if (len * z <= stg) return (stg - len * z) / 2;
         const want = !extent ? 0 : extent * z <= stg - 32 ? stg / 2 - (pos + extent / 2) * z : end ? stg - 16 - (pos + extent) * z : 16 - pos * z;
@@ -881,7 +884,7 @@
 
   window.addEventListener('resize', layoutStage);
   if (window.ResizeObserver) new ResizeObserver(layoutStage).observe(stage);
-  frame.src = 'overlay.html?preview=1'; // set after the listener so the ready message isn't missed
+  frame.src = 'overlay.html?preview=1&v=' + V; // set after the listener so the ready message isn't missed
 })();
 </script>
 </body>
