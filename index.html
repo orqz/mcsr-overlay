@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MCSR Overlay</title>
-<meta name="description" content="Stream overlays for MCSR Ranked: rank badge, elo, session and recent matches in 13 styles, plus a live run HUD. Set it up here, copy the URL into OBS.">
+<meta name="description" content="Stream overlays for MCSR Ranked: rank badge, elo, session and recent matches in 23 styles, plus a live run HUD. Set it up here, copy the URL into OBS.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
@@ -360,6 +360,16 @@
     ['xp', 'XP bar', 'Elo as your level', 'Minecraft'],
     ['buttons', 'Buttons', 'The game menu', 'Minecraft'],
     ['ranked', 'Ranked', 'MCSR Ranked logo look', 'Minecraft'],
+    ['text', 'Text', 'Just text, no panel', 'Modern'],
+    ['glass', 'Glass', 'Frosted pane', 'Modern'],
+    ['outline', 'Outline', 'See-through, thin lines', 'Modern'],
+    ['capsule', 'Capsule', 'Rounded pills', 'Modern'],
+    ['paper', 'Paper', 'Light card for bright scenes', 'Modern'],
+    ['brutal', 'Brutalist', 'Thick lines, hard shadow', 'Modern'],
+    ['neon', 'Neon', 'Lit edge in your tier color', 'Modern'],
+    ['esports', 'Esports', 'Broadcast lower third', 'Modern'],
+    ['terminal', 'Terminal', 'A console with a cursor', 'Retro'],
+    ['arcade', 'Arcade', 'Cabinet screen, pixel type', 'Retro'],
   ];
 
   // What to show. The third value lists the layouts an option applies to; it's hidden for the others.
@@ -384,13 +394,27 @@
     Emerald: { bg: '0b1510', text: 'eafbf1', accent: '34d399', muted: '86a897', edge: '1c2b23' },
     Nether: { bg: '1c0807', text: 'ffece6', accent: 'ff7a2f', muted: 'b98a7e', edge: '3d1510' },
     End: { bg: '100c18', text: 'f4f1ff', accent: 'd89cff', muted: 'a194ba', edge: '2a2140' },
+    Sakura: { bg: '1c1016', text: 'fff1f6', accent: 'f9a8d4', muted: 'c9a0b4', edge: '3a2230' },
+    Ocean: { bg: '061620', text: 'e6f7ff', accent: '38bdf8', muted: '7fa6bd', edge: '123447' },
+    Forest: { bg: '0e140d', text: 'eef6e8', accent: '84cc16', muted: '93a588', edge: '233220' },
+    Sunset: { bg: '1d0f0c', text: 'fff1e8', accent: 'fb923c', muted: 'c29a86', edge: '3d2219' },
+    Mint: { bg: '0b1716', text: 'e8fffb', accent: '5eead4', muted: '89b3ad', edge: '1d3532' },
+    Gold: { bg: '15110a', text: 'fff8e1', accent: 'facc15', muted: 'b8a77a', edge: '362c13' },
+    Blood: { bg: '160707', text: 'ffeaea', accent: 'ef4444', muted: 'b98585', edge: '3a1414' },
+    Slate: { bg: '0f1419', text: 'e2e8f0', accent: '94a3b8', muted: '8794a8', edge: '263040' },
+    Cyber: { bg: '0a0614', text: 'f5f3ff', accent: 'ff2bd6', muted: '9d93c7', edge: '2b1a46' },
+    Twitch: { bg: '0e0e10', text: 'efeff1', accent: 'a970ff', muted: 'adadb8', edge: '2f2f35' },
+    Light: { bg: 'f8fafc', text: '0f172a', accent: '2563eb', muted: '64748b', edge: 'e2e8f0', win: '15803d', loss: 'dc2626' },
+    Paper: { bg: 'f7f5f0', text: '1d1c1a', accent: 'b45309', muted: '6f6a60', edge: 'd9d4c7', win: '15803d', loss: 'c62828' },
   };
-  const FONTS = [['rubik', 'Rubik'], ['mc', 'Monocraft'], ['geist', 'Geist'], ['inter', 'Inter'], ['pixel', 'Pixelify Sans'], ['mono', 'Geist Mono'], ['system', 'Segoe UI']];
+  const FONTS = [['rubik', 'Rubik'], ['mc', 'Monocraft'], ['geist', 'Geist'], ['inter', 'Inter'], ['pixel', 'Pixelify Sans'], ['mono', 'Geist Mono'], ['system', 'Segoe UI'],
+    ['dmsans', 'DM Sans'], ['manrope', 'Manrope'], ['outfit', 'Outfit'], ['spacegrotesk', 'Space Grotesk'], ['sora', 'Sora'], ['oswald', 'Oswald'],
+    ['bebas', 'Bebas Neue'], ['orbitron', 'Orbitron'], ['jetbrains', 'JetBrains Mono'], ['vt323', 'VT323'], ['press', 'Press Start 2P'], ['playfair', 'Playfair Display']];
   const SCENES = [['overworld', 'Overworld'], ['nether', 'Nether'], ['end', 'End'], ['dark', 'Dark'], ['light', 'Bright'], ['green', 'Green'], ['checker', 'None']];
   const FLAT = { dark: '#1b1d22', light: '#dfe1e6', green: '#00b140' };
   const HUD_DEFAULTS = { scale: 1.4, bga: 84, live: true, refresh: 30, reset: 4, speed: 20 };
   // Bump when the customizer needs a newer overlay.html, so a cached old one isn't used
-  const V = 3;
+  const V = 4;
 
   const frame = $('#frame'), hudFrame = $('#hudframe'), stage = $('#stage'), sceneEl = $('#scene'), bounds = $('#bounds');
   const form = $('#form'), hudForm = $('#hudform'), dock = $('#dock');
@@ -482,6 +506,10 @@
         <div class="row"><span class="lbl">Background</span><div class="seg" id="bgmode">
           <button type="button" data-bgmode="none">None</button><button type="button" data-bgmode="panel">Panel</button></div></div>
         <label class="row"><span class="lbl">Font</span><select class="input" data-k="font">${FONTS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></label>
+        <label class="row"><span class="lbl">Numbers font</span><select class="input" data-k="numfont"><option value="">Same as text</option>${FONTS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></label>
+        ${seg('weight', 'Weight', [['light', 'Light'], ['normal', 'Normal'], ['bold', 'Bold'], ['black', 'Black']])}
+        ${toggle('caps', 'Uppercase labels')}
+        ${toggle('elocolor', 'Elo in tier color')}
         <div class="sub">Colors</div>
         <div class="chips" style="margin-bottom:8px">${Object.keys(PALETTES).map(n => `<button type="button" class="chip plain" data-palette="${n}">${n}</button>`).join('')}</div>
         ${color('bg', 'Background')}${range('bga', 'Opacity', 0, 100, 1, '%')}
@@ -489,9 +517,15 @@
         ${color('win', 'Win')}${color('loss', 'Loss')}
         <div class="sub">Panel</div>
         ${seg('fill', 'Fill', [['solid', 'Solid'], ['gradient', 'Gradient']])}
-        ${seg('texture', 'Texture', [['none', 'None'], ['grid', 'Grid'], ['dots', 'Dots'], ['noise', 'Noise']])}
+        <label class="row"><span class="lbl">Texture</span><select class="input" data-k="texture">${[['none', 'None'], ['grid', 'Grid'], ['dots', 'Dots'], ['noise', 'Noise'], ['stripes', 'Stripes'], ['scanlines', 'Scanlines'], ['carbon', 'Carbon'], ['cross', 'Cross']].map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></label>
+        ${seg('density', 'Spacing', [['tight', 'Tight'], ['normal', 'Normal'], ['roomy', 'Roomy']])}
         ${range('radius', 'Corners', 0, 20, 1, '')}
-        ${toggle('border', 'Border')}${toggle('shadow', 'Drop shadow')}${toggle('tshadow', 'Text shadow')}`)}
+        ${toggle('border', 'Border')}${range('edgew', 'Border width', 1, 6, 1, 'px')}
+        ${seg('stripe', 'Accent stripe', [['none', 'None'], ['left', 'Left'], ['top', 'Top'], ['bottom', 'Bottom']])}
+        ${range('glow', 'Glow', 0, 100, 5, '%')}
+        ${toggle('shadow', 'Drop shadow')}${toggle('tshadow', 'Text shadow')}${toggle('outline', 'Text outline')}
+        <div class="sub">Motion</div>
+        ${seg('anim', 'Entrance', [['none', 'None'], ['fade', 'Fade'], ['slide', 'Slide'], ['pop', 'Pop'], ['rise', 'Rise']])}`)}
       ${group('behavior', 'Behavior', `
         ${range('reset', 'New session after', 1, 24, 1, 'h')}
         ${range('refresh', 'Refresh every', 15, 180, 5, 's')}`)}`;
@@ -575,6 +609,8 @@
       const t = e.target.closest('[data-style]');
       if (!t || t.dataset.style === S.style) return;
       snapshot();
+      const themed = new Set(Object.values(THEMES).flatMap(Object.keys));
+      themed.forEach(k => { if (k in DEFAULTS) S[k] = DEFAULTS[k]; });
       Object.assign(S, { accent: '', muted: '', edge: '' }, THEMES[t.dataset.style], { style: t.dataset.style });
       changed(0);
     });
