@@ -4,6 +4,8 @@ OBS overlays for [MCSR Ranked](https://mcsrranked.com): rank badge, elo, tier pr
 
 Set it up in the [customizer](https://orqz.github.io/mcsr-overlay/) and paste the URL into an OBS browser source, or [try a demo](https://orqz.github.io/mcsr-overlay/overlay.html?demo=1&style=scoreboard).
 
+Fully vibe coded with [Claude Code](https://claude.com/claude-code).
+
 <p align="center"><img src="assets/hero.gif" width="960" alt="Five overlays on a Minecraft scene (badge, boss bar, advancement, scoreboard and chat) all updating after a win, then a loss"></p>
 
 ## Styles
@@ -159,4 +161,4 @@ Data comes from the public MCSR Ranked API and refreshes every 30s by default. T
 
 ## Credits
 
-Rank badges, seed/bastion icons, division thresholds and tier colors are MCSR Ranked's own. The Minecraft styles use [Monocraft](https://github.com/IdreesInc/Monocraft) (OFL-1.1). Player heads from mc-heads.net; `stats.html` draws your face from your skin file on Mojang's servers. The text widgets use [Geist](https://github.com/vercel/geist-font) (OFL-1.1); the other fonts come from Google Fonts. The preview scenes are drawn in code from flat colors, no game textures. Not affiliated with MCSR Ranked or Mojang.
+Rank badges, seed/bastion icons, division thresholds and tier colors are MCSR Ranked's own. The Minecraft styles use [Monocraft](https://github.com/IdreesInc/Monocraft) (OFL-1.1). Player heads from mc-heads.net; `stats.html` draws your face from your skin file on Mojang's servers. The text widgets use [Geist](https://github.com/vercel/geist-font) (OFL-1.1); the other fonts come from Google Fonts. The preview scenes are drawn in code from flat colors, no game textures. Fully vibe coded with [Claude Code](https://claude.com/claude-code). Not affiliated with MCSR Ranked or Mojang.
