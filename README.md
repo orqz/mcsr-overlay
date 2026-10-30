@@ -1,18 +1,10 @@
-<p align="center"><img src="assets/banner.png" alt="MCSR Overlay: OBS overlays for MCSR Ranked, 23 styles and a live run HUD"></p>
+# mcsr-overlay
 
-<p align="center">
-  <a href="https://orqz.github.io/mcsr-overlay/"><b>Open the customizer</b></a> &nbsp;·&nbsp;
-  <a href="https://orqz.github.io/mcsr-overlay/overlay.html?demo=1&style=scoreboard">Try a demo</a> &nbsp;·&nbsp;
-  <a href="#styles">Styles</a> &nbsp;·&nbsp;
-  <a href="#live-hud">Live HUD</a> &nbsp;·&nbsp;
-  <a href="#obs-setup">OBS setup</a>
-</p>
+OBS overlays for [MCSR Ranked](https://mcsrranked.com): rank badge, elo, tier progress, session, PB and recent matches for any player, in 23 styles. There's also a live HUD that grades your splits while you play.
 
-Stream overlays for [MCSR Ranked](https://mcsrranked.com): your rank badge, elo, tier progress, session, PB and recent matches, for any player, in 23 styles. Set it up in the customizer, copy one URL into OBS. Nothing to install.
+Set it up in the [customizer](https://orqz.github.io/mcsr-overlay/) and paste the URL into an OBS browser source, or [try a demo](https://orqz.github.io/mcsr-overlay/overlay.html?demo=1&style=scoreboard).
 
 <p align="center"><img src="assets/hero.gif" width="960" alt="Five overlays on a Minecraft scene (badge, boss bar, advancement, scoreboard and chat) all updating after a win, then a loss"></p>
-
-<p align="center"><sub>Five overlays at once, laid out where Minecraft puts its own HUD. Win a match and they all update: popups, elo counting up, session and history.</sub></p>
 
 ## Styles
 
@@ -56,18 +48,7 @@ Twenty-three styles, and every one works in all four layouts. Four are broadcast
 
 ## The customizer
 
-<p align="center"><img src="assets/editor.gif" width="960" alt="The customizer: picking styles from live previews, switching layout and scene, simulating a win, then opening the live HUD"></p>
-
-[orqz.github.io/mcsr-overlay](https://orqz.github.io/mcsr-overlay/) builds the URL for you, and shows the overlay the way your stream will:
-
-- **On a game scene.** The preview is a full 1920×1080 frame of the overworld, the nether or the end, with a hotbar, so you see the overlay at its real size next to the game's own HUD. Or use a flat, chroma green or transparent background. Zoom to the whole stream, to fit the overlay, 100% or 200%; the dashed box is exactly what your OBS source covers.
-- **Styles you can see.** The style picker is the real overlay in every style, showing your own profile.
-- **Simulate a match.** **+ Win** and **+ Loss** play the popup, count the elo up or down and add the result to your session and history, without waiting for a real game.
-- **Pick up where you left off.** **Import URL** takes the URL already in your OBS source and loads it back in. So does opening `index.html?u=…&style=…`.
-- **Undo** with Ctrl+Z, redo with Ctrl+Shift+Z.
-- **Live HUD** has its own tab, with the demo run playing and the helper's setup steps.
-
-Leave the username empty and it shows a demo player.
+[orqz.github.io/mcsr-overlay](https://orqz.github.io/mcsr-overlay/) builds the URL. The preview is a 1920×1080 game scene (overworld, nether, end, or a flat color for chroma key), so you see the overlay at its real size next to the hotbar. The style picker shows every style with your own profile. **+ Win** and **+ Loss** fake a match so you can see the popup and the session update. **Import URL** loads the URL from an existing OBS source back in, and so does opening `index.html?u=…&style=…`. Ctrl+Z undoes, Ctrl+Shift+Z redoes. Without a username it shows a demo player.
 
 ## Live HUD
 
@@ -75,10 +56,10 @@ Leave the username empty and it shows a demo player.
 
 `hud.html` is one small pill: rank badge, elo, tier progress, session elo, PB and your last five results. While you're in a run, a second row opens under it and reacts to every split, comparing it with your own past runs:
 
-- **Each split** (nether, bastion, fortress, blind, stronghold, end, finish) gets a verdict: best ever, great, good, okay or slow pace, plus how far ahead of or behind your average you are.
-- **The track** has a dot per split, and the gap to the next dot fills toward your average time for it. It turns orange once you're past that average.
-- **PB pace:** while you're ahead of your PB run's splits, a gold light runs around the edge and the PB slot shows how far ahead you are. It switches off as soon as the clock passes your PB run's next split.
-- **Callouts** under the pill: the opponent when a match starts, each split, a new PB, then the match result with your elo counting up.
+- Each split (nether, bastion, fortress, blind, stronghold, end, finish) gets a verdict: best ever, great, good, okay or slow pace, plus how far ahead of or behind your average you are.
+- The track has a dot per split, and the gap to the next dot fills toward your average time for it. It turns orange once you're past that average.
+- PB pace: while you're ahead of your PB run's splits, a gold light runs around the edge and the PB slot shows how far ahead you are. It switches off as soon as the clock passes your PB run's next split.
+- Callouts under the pill: the opponent when a match starts, each split, a new PB, then the match result with your elo counting up.
 
 <p align="center"><img src="assets/live.svg" width="900" alt="SpeedRunIGT writes events.log and records; live/mcsr-live.py reads them and serves the HUD on 127.0.0.1:7477; OBS shows hud.html, which also reads elo and matches from the MCSR Ranked API"></p>
 
@@ -112,14 +93,14 @@ Turn on **Live run** in the customizer. The URL it gives you points at the helpe
 
 A plainer look: white text with a dark shadow, no panels, nothing else on screen. Both pages are served by the helper, like the HUD.
 
-- **`stats.html?u=YourName`**: your skin's face and name, then elo and rank, then your PB and how today is going (`pb 23:29 · +23 today (4–1)`). Browser source 1000×220 with `scale=1.8` on a 1440p canvas (`scale=1.35` on 1080p).
-- **`timer.html`**: the run clock in whole seconds, no milliseconds, hidden between runs. It goes gold while you're on PB pace and green when you finish, and the line under it is your pace against your PB:
+- `stats.html?u=YourName`: your skin's face and name, then elo and rank, then your PB and how today is going (`pb 23:29 · +23 today (4–1)`). Browser source 1000×220 with `scale=1.8` on a 1440p canvas (`scale=1.35` on 1080p).
+- `timer.html`: the run clock in whole seconds, no milliseconds, hidden between runs. It goes gold while you're on PB pace and green when you finish, and the line under it is your pace against your PB:
   - before your first split: `pb nether 3:28`, what you're chasing
   - after a split: `nether 2:29 −0:59`, green when you're ahead, red when behind
   - once you pass the time your PB hit its next split: a red `+0:12` that counts up
 
   `clock=0` shows only the pace line, for when the stream shows the in-game timer instead (below). Browser source 600×176, or 600×80 with `clock=0`. `align=left` lines it up on the left.
-- **`hud.html?…&theme=plain`** gives the HUD the same look.
+- `hud.html?…&theme=plain` gives the HUD the same look.
 
 Splits are compared in route order (nether, bastion, fortress, blind, stronghold, end). A PB split that was logged out of order is skipped: SpeedRunIGT only logs the first time you enter a fortress, so clipping one on the way to a bastion leaves no real fortress time. In a Ranked match the clock starts when the countdown ends; the helper reads that from the game's `logs/latest.log` until your first split pins it exactly.
 
@@ -144,14 +125,14 @@ speedrunigt:timer_text_font:speedrunigt:geist-semibold
 
 All of these are in the customizer; each is also a URL param on `overlay.html`, e.g. `overlay.html?u=orq2&style=scoreboard&layout=matches`.
 
-- **Style and layout:** `style` (any of the 23 above), `layout` (`card`, `bar`, `compact`, `matches`)
-- **Show:** player head, flag, tier, leaderboard #, peak, tier progress, best/average time, W–L, winrate, streak, FF rate, matches played, opponent elo/heads, seed icons, time ago
-- **Session:** session elo, session time, session streak, new-match popup, idle reset (`reset`, hours)
-- **Progress:** rank goal (`goal=Diamond I`, or an elo number), rotating info line in compact (`rotate`, seconds)
-- **Look:** display name (`label`), size and scale, width, align/anchor, font (19 to pick from: Rubik, Monocraft, Geist, Inter, Pixelify Sans, Geist Mono, DM Sans, Manrope, Outfit, Space Grotesk, Sora, Oswald, Bebas Neue, Orbitron, JetBrains Mono, VT323, Press Start 2P, Playfair Display, Segoe UI), 20 color palettes (Nether, End, Sakura, Ocean, Forest, Sunset, Mint, Gold, Blood, Slate, Cyber, Twitch, Light, Paper and more), background/text/muted/accent/border/win/loss colors, opacity, fill (solid/gradient), texture (`grid`, `dots`, `noise`, `stripes`, `scanlines`, `carbon`, `cross`), corners, border, shadows
-- **More look, any style:** a second font just for the numbers (`numfont`, any font above), weight (`weight`: `light`, `normal`, `bold`, `black`), uppercase labels (`caps`), spacing (`density`: `tight`, `normal`, `roomy`), an accent stripe on one edge (`stripe`: `left`, `top`, `bottom`), glow in your tier color (`glow`, 0–100), a text outline that reads on anything (`outline`), elo in your tier color (`elocolor`), border width (`edgew`, 1–6 px) and an entrance animation when the source loads (`anim`: `fade`, `slide`, `pop`, `rise`)
-- **Live run:** `run=1` shows the run you're in, read from the helper (on by default when the helper serves the overlay, `run=0` turns it off), `runpop=0` turns off the split popups, `rundemo=20` plays a made-up run at 20× instead
-- **Demo:** `demo` shows a made-up Diamond II player with mobs for opponents, no API calls, and plays a match every 14 seconds. `demo=1850` picks the elo. Handy for trying a style in OBS before you've played ranked.
+- Style and layout: `style` (any of the 23 above), `layout` (`card`, `bar`, `compact`, `matches`)
+- Show: player head, flag, tier, leaderboard #, peak, tier progress, best/average time, W–L, winrate, streak, FF rate, matches played, opponent elo/heads, seed icons, time ago
+- Session: session elo, session time, session streak, new-match popup, idle reset (`reset`, hours)
+- Progress: rank goal (`goal=Diamond I`, or an elo number), rotating info line in compact (`rotate`, seconds)
+- Look: display name (`label`), size and scale, width, align/anchor, font (19 to pick from: Rubik, Monocraft, Geist, Inter, Pixelify Sans, Geist Mono, DM Sans, Manrope, Outfit, Space Grotesk, Sora, Oswald, Bebas Neue, Orbitron, JetBrains Mono, VT323, Press Start 2P, Playfair Display, Segoe UI), 20 color palettes (Nether, End, Sakura, Ocean, Forest, Sunset, Mint, Gold, Blood, Slate, Cyber, Twitch, Light, Paper and more), background/text/muted/accent/border/win/loss colors, opacity, fill (solid/gradient), texture (`grid`, `dots`, `noise`, `stripes`, `scanlines`, `carbon`, `cross`), corners, border, shadows
+- More look, any style: a second font just for the numbers (`numfont`, any font above), weight (`weight`: `light`, `normal`, `bold`, `black`), uppercase labels (`caps`), spacing (`density`: `tight`, `normal`, `roomy`), an accent stripe on one edge (`stripe`: `left`, `top`, `bottom`), glow in your tier color (`glow`, 0–100), a text outline that reads on anything (`outline`), elo in your tier color (`elocolor`), border width (`edgew`, 1–6 px) and an entrance animation when the source loads (`anim`: `fade`, `slide`, `pop`, `rise`)
+- Live run: `run=1` shows the run you're in, read from the helper (on by default when the helper serves the overlay, `run=0` turns it off), `runpop=0` turns off the split popups, `rundemo=20` plays a made-up run at 20× instead
+- Demo: `demo` shows a made-up Diamond II player with mobs for opponents, no API calls, and plays a match every 14 seconds. `demo=1850` picks the elo. Handy for trying a style in OBS before you've played ranked.
 
 ## OBS setup
 
@@ -178,4 +159,4 @@ Data comes from the public MCSR Ranked API and refreshes every 30s by default. T
 
 ## Credits
 
-Rank badges, seed/bastion icons, division thresholds and tier colors are MCSR Ranked's own. The Minecraft styles and the customizer use [Monocraft](https://github.com/IdreesInc/Monocraft) (OFL-1.1). Player heads from mc-heads.net; `stats.html` draws your face from your skin file on Mojang's servers. The text widgets use [Geist](https://github.com/vercel/geist-font) (OFL-1.1); the other fonts come from Google Fonts. The preview scenes are drawn in code from flat colors, no game textures. Built with [Claude Code](https://claude.com/claude-code). Not affiliated with MCSR Ranked or Mojang.
+Rank badges, seed/bastion icons, division thresholds and tier colors are MCSR Ranked's own. The Minecraft styles use [Monocraft](https://github.com/IdreesInc/Monocraft) (OFL-1.1). Player heads from mc-heads.net; `stats.html` draws your face from your skin file on Mojang's servers. The text widgets use [Geist](https://github.com/vercel/geist-font) (OFL-1.1); the other fonts come from Google Fonts. The preview scenes are drawn in code from flat colors, no game textures. Not affiliated with MCSR Ranked or Mojang.
