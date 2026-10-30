@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """mcsr-live: serves the HUD and overlay plus the live run state SpeedRunIGT writes to disk.
 
+It also answers /api/skin?uuid=<uuid> (your Minecraft skin's texture URL, from
+Mojang) for the face next to your name in stats.html.
+
 SpeedRunIGT keeps ~/speedrunigt/latest_world.json pointing at the world you're
 in and appends every split to <world>/speedrunigt/events.log as
 "<event> <rta ms> <igt ms>". Finished worlds land in ~/speedrunigt/records/,
@@ -16,12 +19,22 @@ blocks public sites from reading 127.0.0.1, and OBS's browser source is Chrome.
 Standard library only. It only ever reads your game files.
 """
 import argparse
+import base64
 import json
+import os
 import statistics
+import subprocess
 import threading
 import time
+import urllib.parse
+import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+
+try:  # your own endpoints, if you keep a live/stream_extras.py next to this file
+    import stream_extras as extras
+except ImportError:
+    extras = None
 
 ROOT = Path(__file__).resolve().parent.parent
 IGT_DIR = Path.home() / 'speedrunigt'
@@ -155,6 +168,71 @@ def world_state(game_dir):
     return None
 
 
+MATCH_START = 'Re-activating match recording'  # MCSR Ranked logs this as the countdown ends
+_log_starts = {}  # world path -> match start (ms) found in latest.log
+
+
+def created(path):
+    """When a file was created (seconds), or 0 if the system won't say."""
+    born = getattr(os.stat(path), 'st_birthtime', 0)  # Windows and macOS
+    if not born:
+        try:  # Linux keeps it too, but Python only gets it through stat(1)
+            born = int(subprocess.run(['stat', '-c', '%W', str(path)], capture_output=True, text=True).stdout.strip() or 0)
+        except (OSError, ValueError):
+            born = 0
+    return born
+
+
+def log_match_start(game_dir, log_path):
+    """When the Ranked countdown ended for this world, from the game's latest.log (1s precision)."""
+    key = str(log_path)
+    if key in _log_starts:
+        return _log_starts[key]
+    try:
+        born = created(log_path)
+        log = game_dir / 'logs' / 'latest.log'
+        with open(log, 'rb') as f:
+            f.seek(max(0, log.stat().st_size - 1_000_000))
+            text = f.read().decode('utf-8', 'replace')
+    except (OSError, ValueError):
+        return None
+    if not born:
+        return None
+    day = time.localtime(born)
+    for line in text.splitlines():
+        if MATCH_START not in line or not line.startswith('['):
+            continue
+        try:
+            h, m, sec = (int(x) for x in line[1:9].split(':'))
+        except ValueError:
+            continue
+        t = time.mktime((day.tm_year, day.tm_mon, day.tm_mday, h, m, sec, 0, 0, -1))
+        if t < born - 3600:
+            t += 86400  # past midnight
+        if born - 1 <= t <= born + 600:  # this world's countdown, not an earlier match
+            _log_starts[key] = int((t + .5) * 1000)  # middle of that second
+            return _log_starts[key]
+    return None
+
+
+def clock_start(world, events, mtime, log_path):
+    """Wall-clock run start (RTA), or None when it can't be known.
+
+    Exact once a split is logged: mtime is when the last line was written, so
+    start = mtime - that line's RTA. Until then, Ranked's countdown-end line in the
+    game log gives it to the second. The "common.view_seed 0 0" line doesn't count:
+    it's written a few seconds before the countdown ends. Practice maps get no clock.
+    """
+    if not events or not mtime or 'practice' in world.name.lower():
+        return None
+    name, rta, _ = events[-1]
+    if name != 'common.view_seed' and rta > 0:
+        return mtime - rta
+    if kind_of(world.name) == 'ranked':
+        return log_match_start(world.parent.parent, log_path)
+    return None
+
+
 def live_state(history):
     latest = read_json(IGT_DIR / 'latest_world.json') or {}
     world_path = latest.get('world_path')
@@ -207,8 +285,7 @@ def live_state(history):
         'live': live,
         'finished': finished,
         'splits': splits,
-        # mtime is when the last line was written, so this is the wall-clock run start (RTA)
-        'clockStart': mtime - events[-1][1] if events and mtime else None,
+        'clockStart': clock_start(world, events, mtime, log),
         'match': {
             'type': session.get('matchType'),
             'opponent': opp.get('nickname'),
@@ -220,10 +297,35 @@ def live_state(history):
     }
 
 
+# ---------- skin faces for stats.html ----------
+
+class Skins:
+    """Skin texture URL for a Minecraft UUID, from Mojang's session server, cached for 10 minutes."""
+
+    def __init__(self):
+        self.cache = {}
+
+    def get(self, uuid):
+        uuid = ''.join(c for c in uuid.lower() if c in '0123456789abcdef')
+        if len(uuid) != 32:
+            return {'ok': False, 'error': 'bad uuid'}
+        at, url = self.cache.get(uuid, (0, None))
+        if time.time() - at > 600:
+            try:
+                with urllib.request.urlopen(f'https://sessionserver.mojang.com/session/minecraft/profile/{uuid}', timeout=5) as r:
+                    prop = json.loads(r.read())['properties'][0]['value']
+                url = json.loads(base64.b64decode(prop))['textures']['SKIN']['url'].replace('http://', 'https://')
+            except (OSError, ValueError, KeyError, IndexError):
+                pass  # keep the last good one
+            self.cache[uuid] = (time.time(), url)
+        return {'ok': url is not None, 'url': url}
+
+
 # ---------- http ----------
 
 class Handler(SimpleHTTPRequestHandler):
     history = History()
+    skins = Skins()
     lock = threading.Lock()
 
     def __init__(self, *a, **kw):
@@ -240,20 +342,28 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Methods', 'GET')
         self.end_headers()
 
+    def send_json(self, body):
+        data = json.dumps(body).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
     def do_GET(self):
-        path = self.path.split('?', 1)[0]
+        path, _, query = self.path.partition('?')
         if path == '/api/live':
             with self.lock:
                 try:
                     body = live_state(self.history)
                 except Exception as e:  # never take the overlay down over one bad read
                     body = {'ok': False, 'error': str(e)}
-            data = json.dumps(body).encode()
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Content-Length', str(len(data)))
-            self.end_headers()
-            self.wfile.write(data)
+            return self.send_json(body)
+        if path == '/api/skin':
+            uuid = urllib.parse.parse_qs(query).get('uuid', [''])[0]
+            with self.lock:
+                return self.send_json(self.skins.get(uuid))
+        if extras and extras.handle(self, path, query):
             return
         if path == '/':
             self.send_response(302)

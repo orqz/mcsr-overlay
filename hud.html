@@ -154,6 +154,20 @@
   .spark { position: absolute; width: .3125rem; height: .3125rem; background: var(--best); border-radius: 1px; pointer-events: none;
     animation: spark 1.2s cubic-bezier(.15, .7, .3, 1) forwards; }
   @keyframes spark { from { opacity: 1; transform: translate(0, 0) rotate(45deg) scale(1.2); } to { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(225deg) scale(.2); } }
+  /* ---------- &theme=plain: no boxes or glow, just text (colours stay) ---------- */
+  body.plain { --bg: transparent; --line: transparent; --accent: #fff; --live: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .9), 0 0 6px rgba(0, 0, 0, .55); }
+  body.plain .pill, body.plain .co { border-radius: 0; box-shadow: none; background: transparent; padding-left: 0; }
+  body.plain .pill::before, body.plain .spark, body.plain .co .shine { display: none; }
+  body.plain .co .bar, body.plain .node.hit, body.plain .rk { box-shadow: none; filter: none; }
+  body.plain .pill.flash, body.plain .node.next { animation: none; }
+  body.plain .node.next { box-shadow: inset 0 0 0 1.5px #fff; }
+  body.plain .seg i { background: #fff; }
+  body.plain .seg { background: rgba(255, 255, 255, .25); }
+  body.plain #pbk.pace b { text-shadow: inherit; }
+  body.plain .sq.win, body.plain .sq.loss, body.plain .sq.draw, body.plain .chip, body.plain .co .pbc { background: transparent; box-shadow: none; }
+  body.plain .co.gold { background: transparent; }
+  body.plain .tier, body.plain .kv small, body.plain .phase .nm, body.plain .co .k { letter-spacing: .02em; text-transform: none; font-weight: 500; }
+  body.plain .kv small, body.plain .phase .nm { color: #cfcfcf; }
 </style>
 </head>
 <body>
@@ -178,7 +192,7 @@
 (() => {
   'use strict';
 
-  // ?u=name  &scale=1.4  &bga=84 (panel opacity %)  &demo (fake run, to preview)  &live=0 (stats only)
+  // ?u=name  &scale=1.4  &bga=84 (panel opacity %)  &theme=plain (grey/white)  &demo (fake run, to preview)  &live=0 (stats only)
   const API = 'https://api.mcsrranked.com';
   const P = new URLSearchParams(location.search + '&' + location.hash.slice(1));
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
@@ -194,6 +208,7 @@
   };
   document.documentElement.style.setProperty('--s', cfg.scale);
   document.documentElement.style.setProperty('--bga', cfg.bga);
+  document.body.classList.toggle('plain', P.get('theme') === 'plain');
 
   // The run itself (splits, verdicts, PB pace, the demo) comes from live.js, shared with the overlay.
   const LV = window.MCSRLive;

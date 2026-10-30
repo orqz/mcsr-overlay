@@ -97,6 +97,38 @@ The overlay's 13 styles show the same live run as the HUD, each in its own way: 
 
 Turn on **Live run** in the customizer. The URL it gives you points at the helper, `http://127.0.0.1:7477/overlay.html?u=YourName&style=…&run=1`, for the same reason as the HUD: OBS won't let a page on github.io read `127.0.0.1`. The size it shows leaves room for the run, so the source doesn't need resizing mid-run. Both the HUD and the overlay grade splits with `live.js`, so they always agree.
 
+## Text widgets
+
+A plainer look: white text with a dark shadow, no panels, nothing else on screen. Both pages are served by the helper, like the HUD.
+
+- **`stats.html?u=YourName`**: your skin's face and name, then elo and rank, then your PB and how today is going (`pb 23:29 · +23 today (4–1)`). Browser source 1000×220 with `scale=1.8` on a 1440p canvas (`scale=1.35` on 1080p).
+- **`timer.html`**: the run clock in whole seconds, no milliseconds, hidden between runs. It goes gold while you're on PB pace and green when you finish, and the line under it is your pace against your PB:
+  - before your first split: `pb nether 3:28`, what you're chasing
+  - after a split: `nether 2:29 −0:59`, green when you're ahead, red when behind
+  - once you pass the time your PB hit its next split: a red `+0:12` that counts up
+
+  `clock=0` shows only the pace line, for when the stream shows the in-game timer instead (below). Browser source 600×176, or 600×80 with `clock=0`. `align=left` lines it up on the left.
+- **`hud.html?…&theme=plain`** gives the HUD the same look.
+
+Splits are compared in route order (nether, bastion, fortress, blind, stronghold, end). A PB split that was logged out of order is skipped: SpeedRunIGT only logs the first time you enter a fortress, so clipping one on the way to a bastion leaves no real fortress time. In a Ranked match the clock starts when the countdown ends; the helper reads that from the game's `logs/latest.log` until your first split pins it exactly.
+
+### The in-game timer to match
+
+These SpeedRunIGT settings give an in-game timer in the same style: one white line, no milliseconds, no `IGT:` label. Put a TTF in `~/speedrunigt/fonts/` first (I use [Geist](https://github.com/vercel/geist-font) SemiBold, saved as `geist-semibold.ttf`). Set them in SpeedRunIGT's options, or in the instance's `speedrunigt/options.txt` while the game is closed:
+
+```
+speedrunigt:timer_display_decimals:NONE
+speedrunigt:display_time_only:true
+speedrunigt:timer_igt_color:16777215
+speedrunigt:timer_igt_decoration:SHADOW
+speedrunigt:timer_scale_igt:2.5
+speedrunigt:timer_scale_rta:0.0
+speedrunigt:timer_display_align_igt:RIGHT
+speedrunigt:timer_text_font:speedrunigt:geist-semibold
+```
+
+`timer_scale_rta:0.0` hides the second line, which shows the same time in Ranked. If you crop an ultrawide to 16:9 in OBS, move the timer and Ranked's match HUD inside the part you keep, so they show on stream as they are: `speedrunigt:timer_igt_pos_x` and `mcsrranked:gui_position_x` (0 to 1 across the screen, right-aligned). For a 3440-wide window with 440px cropped off each side that's `0.866`.
+
 ## Options
 
 All of these are in the customizer; each is also a URL param on `overlay.html`, e.g. `overlay.html?u=orq2&style=scoreboard&layout=matches`.
@@ -124,11 +156,14 @@ Data comes from the public MCSR Ranked API and refreshes every 30s by default. T
 | `index.html` | The customizer |
 | `overlay.html` | The overlay; every option is a URL param |
 | `hud.html` | The live HUD |
+| `stats.html` | Text widget: face, name, elo, rank, PB, today |
+| `timer.html` | Text widget: run clock and PB pace line |
+| `stream.css` | The plain look `stats.html` and `timer.html` share |
 | `live.js` | The live run, shared by the HUD and the overlay: reads the helper, grades every split, plays the demo run |
-| `live/mcsr-live.py` | The helper that reads your runs and serves the HUD and overlay on 127.0.0.1:7477 |
+| `live/mcsr-live.py` | The helper that reads your runs and serves the HUD, overlay and text widgets on 127.0.0.1:7477 |
 | `scene.js` | The pixel-art scenes behind the customizer's preview |
 | `assets/` | The images in this README |
 
 ## Credits
 
-Rank badges, seed/bastion icons, division thresholds and tier colors are MCSR Ranked's own. The Minecraft styles and the customizer use [Monocraft](https://github.com/IdreesInc/Monocraft) (OFL-1.1). Player heads from mc-heads.net. The preview scenes are drawn in code from flat colors, no game textures. Built with [Claude Code](https://claude.com/claude-code). Not affiliated with MCSR Ranked or Mojang.
+Rank badges, seed/bastion icons, division thresholds and tier colors are MCSR Ranked's own. The Minecraft styles and the customizer use [Monocraft](https://github.com/IdreesInc/Monocraft) (OFL-1.1). Player heads from mc-heads.net; `stats.html` draws your face from your skin file on Mojang's servers. The text widgets use [Geist](https://github.com/vercel/geist-font) (OFL-1.1). The preview scenes are drawn in code from flat colors, no game textures. Built with [Claude Code](https://claude.com/claude-code). Not affiliated with MCSR Ranked or Mojang.

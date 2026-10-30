@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ranked stats</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="stream.css">
+<style>
+  /* Your name, then elo + rank, then PB + how today is going. */
+  .name { display: flex; align-items: center; gap: .5rem; font-size: 2.25rem; font-weight: 700; line-height: 1.05; letter-spacing: -.02em; }
+  /* your skin's face, crisp pixels, with the same dark shadow as the text */
+  .name canvas { width: 1.75rem; height: 1.75rem; image-rendering: pixelated;
+    filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .7)) drop-shadow(0 0 3px rgba(0, 0, 0, .9)); }
+  .line { margin-top: .125rem; font-size: 1.0625rem; font-weight: 600; }
+  .rank { color: var(--tier, #fff); }
+  .muted { color: var(--grey); font-weight: 500; }
+  .pos { color: var(--green); } .neg { color: var(--red); }
+</style>
+</head>
+<body>
+<div class="fade" id="box">
+  <div class="name"><canvas id="head" width="8" height="8" hidden></canvas><span id="name"></span></div>
+  <div class="line" id="elo"></div>
+  <div class="line" id="pb"></div>
+</div>
+<script>
+(() => {
+  'use strict';
+
+  // ?u=orq2  &scale=1.6  &reset=4 (hours without a ranked match before "today" starts over)  &demo
+  const P = new URLSearchParams(location.search + '&' + location.hash.slice(1));
+  const API = 'https://api.mcsrranked.com';
+  const user = (P.get('u') || '').trim();
+  const reset = (parseFloat(P.get('reset')) || 4) * 3600;
+  document.documentElement.style.setProperty('--s', Math.min(4, Math.max(.5, parseFloat(P.get('scale')) || 1)));
+
+  const DIVS = [
+    [0, 'Coal I'], [400, 'Coal II'], [500, 'Coal III'], [600, 'Iron I'], [700, 'Iron II'], [800, 'Iron III'],
+    [900, 'Gold I'], [1000, 'Gold II'], [1100, 'Gold III'], [1200, 'Emerald I'], [1300, 'Emerald II'], [1400, 'Emerald III'],
+    [1500, 'Diamond I'], [1650, 'Diamond II'], [1800, 'Diamond III'], [2000, 'Netherite'],
+  ];
+  const TIER_COLORS = { Coal: '#c4c4c4', Iron: '#ffffff', Gold: '#eab308', Emerald: '#21c84b', Diamond: '#2ce0d8', Netherite: '#d066ff' };
+  const tierOf = elo => { let i = 0; while (i + 1 < DIVS.length && elo >= DIVS[i + 1][0]) i++; return DIVS[i][1]; };
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  };
+  const $ = id => document.getElementById(id);
+
+  async function api(path) {
+    const res = await fetch(`${API}${path}${path.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache: 'no-store' });
+    const body = await res.json();
+    if (!res.ok || body.status !== 'success') throw new Error('api');
+    return body.data;
+  }
+
+  // "Today" = since the overlay first saw you, until `reset` hours pass without a ranked match.
+  function today(uuid, matches) {
+    const now = Date.now() / 1000, k = 'mcsr-stats:session:' + uuid;
+    let s = store.get(k);
+    const lastPlayed = matches[0] ? matches[0].date : 0;
+    if (!s || now - Math.max(s.start, lastPlayed) > reset) store.set(k, s = { start: now });
+    const list = matches.filter(m => m.date >= s.start && !m.decayed);
+    const mine = m => (m.changes || []).find(c => c.uuid === uuid);
+    const won = m => m.result && m.result.uuid === uuid;
+    return {
+      n: list.length,
+      elo: list.reduce((a, m) => a + ((mine(m) || {}).change || 0), 0),
+      w: list.filter(won).length,
+      l: list.filter(m => m.result && m.result.uuid && !won(m)).length,
+    };
+  }
+
+  const pad = n => String(n).padStart(2, '0');
+  const fmt = ms => { const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
+    return h ? `${h}:${pad(m)}:${pad(s % 60)}` : `${pad(m)}:${pad(s % 60)}`; };
+
+  // Your skin's face plus its hat layer, cut straight from the skin file Mojang serves
+  // (head services cache old skins). The helper looks the file up.
+  const local = /^(127\.0\.0\.1|localhost|\[::1\])$/.test(location.hostname);
+  async function head(uuid) {
+    const c = $('head');
+    if (!uuid || c.dataset.uuid === uuid) return;
+    c.dataset.uuid = uuid;
+    try {
+      const d = await (await fetch(`${local ? '' : 'http://127.0.0.1:7477'}/api/skin?uuid=${uuid}`)).json();
+      if (!d.ok) return;
+      const img = new Image();
+      img.onload = () => {
+        const g = c.getContext('2d');
+        g.imageSmoothingEnabled = false;
+        g.clearRect(0, 0, 8, 8);
+        g.drawImage(img, 8, 8, 8, 8, 0, 0, 8, 8);    // face
+        g.drawImage(img, 40, 8, 8, 8, 0, 0, 8, 8);   // hat layer
+        c.hidden = false;
+      };
+      img.src = d.url;
+    } catch (e) { c.dataset.uuid = ''; }
+  }
+
+  function show(name, elo, pb, t, uuid) {
+    head(uuid);
+    const rank = elo == null ? 'Unrated' : tierOf(elo);
+    document.documentElement.style.setProperty('--tier', TIER_COLORS[rank.split(' ')[0]] || '#fff');
+    $('name').textContent = name;
+    $('elo').innerHTML = `${elo == null ? '—' : elo} <span class="muted">elo ·</span> <span class="rank">${rank}</span>`;
+    const day = t && t.n ? `<span class="${t.elo > 0 ? 'pos' : t.elo < 0 ? 'neg' : ''}">${t.elo > 0 ? '+' : t.elo < 0 ? '−' : '±'}${Math.abs(t.elo)}</span> <span class="muted">today (${t.w}–${t.l})</span>` : '';
+    $('pb').innerHTML = [pb ? `<span class="muted">pb</span> ${fmt(pb)}` : '', day].filter(Boolean).join(' <span class="muted">·</span> ');
+    $('box').classList.add('on');
+  }
+
+  async function poll() {
+    try {
+      const u = await api('/users/' + encodeURIComponent(user));
+      const matches = await api(`/users/${u.uuid}/matches?type=2&count=30`);
+      const best = s => (((u.statistics || {})[s] || {}).bestTime || {}).ranked;
+      show(u.nickname, u.eloRate, best('total') || best('season'), today(u.uuid, matches), u.uuid);
+    } catch (e) { /* keep what's on screen */ }
+  }
+
+  if (P.has('demo')) show('orq2', 531, 1409166, { n: 5, elo: 23, w: 4, l: 1 });
+  else if (user) { poll(); setInterval(poll, 30000); }
+  else { $('name').textContent = 'add ?u=YourName'; $('box').classList.add('on'); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run timer</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="stream.css">
+<style>
+  /* Run clock: whole seconds, hidden until the run has really started. Gold on PB pace, green when done. */
+  .clock { font-size: 3rem; font-weight: 700; line-height: 1; letter-spacing: -.02em; }
+  .clock .h { color: var(--grey); }
+  .timer.pbpace .clock, .timer.done.pb .clock { color: var(--gold); }
+  .timer.done .clock { color: var(--green); }
+  /* last split vs your PB run: "bastion 4:42 -0:21" */
+  .split { margin-top: .25rem; font-size: 1.0625rem; color: var(--grey); }
+  .split:first-child, .clock[hidden] + .split { margin-top: 0; }
+  .split b { font-weight: 600; color: #fff; }
+  .ahead { color: var(--green); } .behind { color: var(--red); }
+</style>
+</head>
+<body>
+<div class="timer fade" id="timer"><div class="clock" id="clock"></div><div class="split" id="split"></div></div>
+<script src="live.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  // ?scale=1.5  &align=left  &clock=0 (only the split/PB pace line, for under the in-game timer)  &demo=40 (fake run at 40x speed, to preview)
+  const P = new URLSearchParams(location.search + '&' + location.hash.slice(1));
+  const local = /^(127\.0\.0\.1|localhost|\[::1\])$/.test(location.hostname);
+  const scale = Math.min(4, Math.max(.5, parseFloat(P.get('scale')) || 1));
+  document.documentElement.style.setProperty('--s', scale);
+  document.body.classList.toggle('right', P.get('align') !== 'left');
+  const showClock = P.get('clock') !== '0';
+  if (!showClock) document.getElementById('clock').hidden = true;
+
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2, '0');
+  // 04:10, 1:02:33 -- never milliseconds
+  function clock(ms) {
+    const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
+    return h ? `<span class="h">${h}:</span>${pad(m)}:${pad(s % 60)}` : `${pad(m)}:${pad(s % 60)}`;
+  }
+
+  const LV = window.MCSRLive;
+  const E = LV.create({
+    url: local ? '/api/live' : 'http://127.0.0.1:7477/api/live',
+    demo: P.has('demo') ? (parseFloat(P.get('demo')) || 20) : 0,
+  });
+
+  let shown = '', shownLine = '';
+  const nm = k => LV.NAMES[k].toLowerCase();
+
+  // Pace against your PB run, like a split timer, always in route order
+  // (nether, bastion, fortress, blind, stronghold, end, finish):
+  //   before the first split    "pb nether 3:28"      (what you're chasing)
+  //   after a split             "nether 2:29 -0:59"   (green ahead, red behind)
+  //   past your PB's next split "bastion +0:12"       (red, ticking every second)
+  // A PB split logged out of order is left out: SpeedRunIGT only logs the first time you enter
+  // a fortress, so clipping fortress bounds before the bastion leaves no real fortress time.
+  function pbRoute(pbs) {
+    const out = {};
+    let at = 0;
+    for (const k of LV.SPLITS) if (pbs[k] != null && pbs[k] >= at) out[k] = at = pbs[k];
+    return out;
+  }
+
+  function paceLine(x, fin) {
+    const j = x.recent, now = x.now;
+    const pb = x.ref && x.ref.pb ? pbRoute(x.ref.pb.splits) : null;
+    const last = j ? (() => {
+      const d = pb && pb[j.key] != null ? j.t - pb[j.key] : null;
+      return `${nm(j.key)} <b>${LV.fmt(j.t)}</b>` + (d == null ? '' : ` <span class="${d <= 0 ? 'ahead' : 'behind'}">${LV.fmtD(d)}</span>`);
+    })() : '';
+    if (fin || !pb || now == null) return last;
+    const next = LV.SPLITS.find(k => pb[k] != null && !x.judged[k]);
+    if (!next) return last;
+    if (now > pb[next]) return `${nm(next)} <span class="behind">+${LV.fmt(now - pb[next])}</span>`;
+    return last || `pb ${nm(next)} <b>${LV.fmt(pb[next])}</b>`;
+  }
+
+  function draw() {
+    const x = E.view(), fin = x.judged.finish;
+    const t = fin ? fin.t : x.now;
+    // nothing to show before the clock has ticked a second (the "00:00" between worlds)
+    const line = paceLine(x, fin);
+    const on = showClock ? x.on && t != null && t >= 1000 : x.on && !!line;
+    const el = $('timer');
+    el.classList.toggle('on', on);
+    el.classList.toggle('done', !!fin);
+    el.classList.toggle('pb', !!fin && fin.v === 'pb');
+    el.classList.toggle('pbpace', !fin && x.pb != null);
+    if (!on) return;
+    const html = t != null ? clock(t) : '';
+    if (html !== shown) { $('clock').innerHTML = shown = html; }
+    if (line !== shownLine) $('split').innerHTML = shownLine = line;
+  }
+
+  E.start();
+  setInterval(draw, 200);
+})();
+</script>
+</body>
+</html>

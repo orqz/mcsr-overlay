@@ -1,0 +1,19 @@
+/* stream.css: the stream widgets are just text. A hard shadow plus a soft halo keeps it readable on any terrain. */
+:root {
+  --s: 1;
+  --gold: #ffc94d; --green: #4ade80; --red: #f87171; --grey: #d0d0d0;
+  --ts: 0 2px 0 rgba(0, 0, 0, .7), 0 0 3px rgba(0, 0, 0, .9), 0 0 12px rgba(0, 0, 0, .5);
+}
+html { font-size: calc(16px * var(--s)); }
+html, body { margin: 0; background: transparent; }
+* { box-sizing: border-box; }
+body {
+  padding: .75rem; overflow: hidden;
+  font: 600 1rem/1.25 'Geist', system-ui, sans-serif; color: #fff;
+  font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  text-shadow: var(--ts);
+}
+body.right { text-align: right; }
+.fade { opacity: 0; transition: opacity .4s; }
+.fade.on { opacity: 1; }
+[hidden] { display: none !important; }
